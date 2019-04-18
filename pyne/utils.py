@@ -190,3 +190,13 @@ def remove(path):
         remove_tree(path, verbose=False)
     else:
         pass
+
+def is_number(s):
+    """
+    This function checks whether a string can be represented as a number.
+    """
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
