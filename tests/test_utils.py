@@ -194,5 +194,22 @@ def test_toggle_warnings():
     assert_equal(state, not observed)
 
 
+def test_is_number():
+    """
+    Test function of check whether a string can be converted to a number.
+    """
+    # non-number strings
+    assert_equal(utils.is_number("spam"), False)
+    assert_equal(utils.is_number("spam.1e2"), False)
+    assert_equal(utils.is_number("123spam"), False)
+    # strings of number
+    assert_equal(utils.is_number("123"), True)
+    assert_equal(utils.is_number("12.3"), True)
+    assert_equal(utils.is_number("1.2e3"), True)
+    assert_equal(utils.is_number(".012"), True)
+    assert_equal(utils.is_number("NAN"), True)
+    assert_equal(utils.is_number("inf"), True)
+
+
 if __name__ == "__main__":
     nose.runmodule()

@@ -193,7 +193,7 @@ def remove(path):
 
 def is_number(s):
     """
-    This function checks whether a string can be represented as a number.
+    This function checks whether a string can be converted as a number.
     """
     try:
         float(s)
