@@ -199,6 +199,7 @@ def response_to_hdf5(filename, response, chunkshape=(10000,)):
                 - alpha_heat [W/cm3]
                 - beta_heat [W/cm3]
                 - gamma_heat [W/cm3]
+                - wdr
 
     Parameters
     ----------
@@ -397,6 +398,7 @@ def response_hdf5_to_mesh(mesh, filename, tags, response):
             - alpha_heat
             - beta_heat
             - gamma_heat
+            - wdr
     """
 
     # create a dict of tag handles for all keys of the tags dict
@@ -1100,6 +1102,7 @@ def response_output_zone(response=None):
             - alpha_heat
             - beta_heat
             - gamma_heat
+            - wdr
 
     Returns
     -------
@@ -1110,7 +1113,7 @@ def response_output_zone(response=None):
     if response == None:
         return ''
     if response not in ('decay_heat', 'photon_source', 'specific_activity',
-                        'alpha_heat', 'beta_heat', 'gamma_heat'):
+                        'alpha_heat', 'beta_heat', 'gamma_heat', 'wdr'):
         raise ValueError('response {0} not supported.'.format(response))
 
     start_str = "output zone\n"
@@ -1130,6 +1133,9 @@ def response_output_zone(response=None):
     # define code block for gamma_heat
     if response == 'gamma_heat':
         code_block= "       gamma_heat\n"
+    # define code block for wdr
+    if response == 'wdr':
+        code_block= "       wdr\n"
 
     return ''.join([start_str, code_block, end_str])
 
