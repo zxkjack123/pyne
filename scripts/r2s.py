@@ -156,7 +156,7 @@ def step1():
     print('R2S step1 complete, run ALARA with the command:')
     print('>> alara alara_inp > output.txt')
 
-
+@profile
 def step2():
     config = ConfigParser.ConfigParser()
     config.read(config_filename)
