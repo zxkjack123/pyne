@@ -125,8 +125,8 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout_build:
-          flags: ""
-          build: "python3"
+          flags: "--moab $HOME/opt/moab --dagmc $HOME/opt/dagmc"
+          build: "python3_dagmc_pymoab"
 
 
 # Python 2 jobs
