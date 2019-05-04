@@ -121,11 +121,19 @@ jobs:
           build: "python3"
   py3_dagmc_pymoab_build:
     executor:
-      name: py3
+      name: py3_dagmc_pymoab
     working_directory: ~/repo
     steps:
       - checkout_build:
           flags: "--moab $HOME/opt/moab --dagmc $HOME/opt/dagmc"
+          build: "python3_dagmc_pymoab"
+  py3_dagmc_pymoab_test:
+    executor:
+      name: py3_dagmc_pymoab
+    workding_directory: ~/repo
+    steps:
+      - run_test:
+          flags: "python3"
           build: "python3_dagmc_pymoab"
 
 
@@ -199,6 +207,9 @@ workflows:
       - py3_dagmc_pymoab_build:
           requires:
             - py3_build
+      - py3_dagmc_pymoab_test:
+          requires:
+            - py3_dagmc_pymoab_build
     
       - py2_build
       - py2_test:
