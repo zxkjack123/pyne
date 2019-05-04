@@ -18,6 +18,9 @@ executors:
     py3:
         docker:
             - image: pyne/ubuntu_18.04_py3_pyne-deps:latest
+    py3_dagmc_pymoab:
+        docker:
+            - image: zxkjack123/pyne_python3_dagmc_pymoab:base
 
 
 # Commands:
@@ -116,6 +119,14 @@ jobs:
       - run_test:
           flags: "python3"
           build: "python3"
+  py3_dagmc_pymoab_build:
+    executor:
+      name: py3
+    working_directory: ~/repo
+    steps:
+      - checkout_build:
+          flags: ""
+          build: "python3"
 
 
 # Python 2 jobs
@@ -183,6 +194,9 @@ workflows:
     jobs:
       - py3_build
       - py3_test:
+          requires:
+            - py3_build
+      - py3_dagmc_pymoab_build:
           requires:
             - py3_build
     
