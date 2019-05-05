@@ -1039,7 +1039,7 @@ class Mesh(object):
         tags = self.common_ve_tags(other)
         return self._do_op(other, tags, "*")
 
-    def __idiv__(self, other):
+    def __itruediv__(self, other):
         """Divides the common tags of other to the mesh object.
         """
         tags = self.common_ve_tags(other)

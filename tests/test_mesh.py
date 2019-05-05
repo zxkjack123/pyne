@@ -5,10 +5,6 @@ import shutil
 import warnings
 import itertools
 try:
-    from itertools import izip as zip
-except:
-    pass
-try:
     from itertools import izip_longest as zip_longest
 except:
     from itertools import zip_longest
