@@ -20,7 +20,7 @@ executors:
             - image: pyne/ubuntu_18.04_py3_pyne-deps:latest
     py3_dagmc_pymoab:
         docker:
-            - image: zxkjack123/pyne_python3_dagmc_pymoab:base
+            - image: zxkjack123/ubuntu_18.04_py3_dagmc_pymoab_pyne-deps:latest
 
 
 # Commands:
