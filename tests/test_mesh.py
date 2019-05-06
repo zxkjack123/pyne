@@ -5,6 +5,10 @@ import shutil
 import warnings
 import itertools
 try:
+    from itertools import izip as zip
+except:
+    pass
+try:
     from itertools import izip_longest as zip_longest
 except:
     from itertools import zip_longest
@@ -495,31 +499,31 @@ def test_iterate_1d():
 
 
 def test_vtx_iterator():
-    # use vanilla zip_longest as we"ll test using non-equal-length iterators
+    # use vanilla izip as we"ll test using non-equal-length iterators
 
     sm = Mesh(structured=True,
               structured_coords=[range(10, 15), range(21, 25), range(31, 34)])
     it = meshset_iterate(sm.mesh, sm.structured_set, types.MBVERTEX)
 
     # test the default order
-    for (it_x, sm_x) in zip_longest(it,
+    for (it_x, sm_x) in zip(it,
                                                sm.structured_iterate_vertex("zyx")):
         assert_equal(it_x, sm_x)
 
     # Do the same again, but use an arbitrary kwarg to structured_iterate_vertex
     # to prevent optimization from kicking in
     it.reset()
-    for (it_x, sm_x) in zip_longest(it,
+    for (it_x, sm_x) in zip(it,
                                                sm.structured_iterate_vertex("zyx", no_opt=True)):
         assert_equal(it_x, sm_x)
 
     it.reset()
-    for (it_x, sm_x) in zip_longest(it,
+    for (it_x, sm_x) in zip(it,
                              sm.structured_iterate_vertex("yx", z=sm.dims[2])):
         assert_equal(it_x, sm_x)
 
     it.reset()
-    for (it_x, sm_x) in zip_longest(it, sm.structured_iterate_vertex("x")):
+    for (it_x, sm_x) in zip(it, sm.structured_iterate_vertex("x")):
         assert_equal(it_x, sm_x)
 
 
