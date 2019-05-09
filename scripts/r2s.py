@@ -177,9 +177,9 @@ def step2():
     if not isfile(h5_file):
         photon_source_to_hdf5('phtn_src')
     intensities = "Total photon source intensities (p/s)\n"
+    mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')
     for i, dc in enumerate(decay_times):
         print('Writing source for decay time: {0}'.format(dc))
-        mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')
         tags = {('TOTAL', dc): tag_name}
         photon_source_hdf5_to_mesh(mesh, h5_file, tags, sub_voxel=sub_voxel,
                                    cell_mats=cell_mats)
@@ -187,7 +187,9 @@ def step2():
         intensity = total_photon_source_intensity(mesh, tag_name,
                                                   sub_voxel=sub_voxel)
         intensities += "{0}: {1}\n".format(dc, intensity)
-
+        # create a blank mesh for step 2:
+        mesh.delete_tag(tag_name)
+ 
     with open(tot_phtn_src_intensities, 'w') as f:
         f.write(intensities)
 
