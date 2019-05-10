@@ -177,6 +177,7 @@ def photon_source_to_hdf5(filename, chunkshape=(10000,)):
     f.close()
 
 
+@profile
 def photon_source_hdf5_to_mesh(mesh, filename, tags, sub_voxel=False,
                                cell_mats=None):
     """This function reads in an hdf5 file produced by photon_source_to_hdf5
@@ -225,9 +226,11 @@ def photon_source_hdf5_to_mesh(mesh, filename, tags, sub_voxel=False,
     tag_handles = {}
     tag_size = num_e_groups * max_num_cells
     for tag_name in tags.values():
-
-        mesh.tag(tag_name, np.zeros(tag_size, dtype=float), 'nat_mesh',
-                 size=tag_size, dtype=float)
+        # allow initilize the tag outside this function
+        # reduce memory usage
+        if tag_name not in mesh.tags:
+            mesh.tag(tag_name, np.zeros(tag_size, dtype=float), 'nat_mesh',
+                     size=tag_size, dtype=float)
         tag_handles[tag_name] = mesh.get_tag(tag_name)
 
     # creat a list of decay times (strings) in the source file

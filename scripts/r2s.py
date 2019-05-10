@@ -6,6 +6,7 @@ except ImportError:
     import configparser as ConfigParser
 
 from os.path import isfile
+import numpy as np
 
 from pyne.mesh import Mesh, NativeMeshTag
 from pyne.dagmc import cell_materials, load, discretize_geom
@@ -167,17 +168,35 @@ def step2():
     tot_phtn_src_intensities = config.get('step2', 'tot_phtn_src_intensities')
     tag_name = "source_density"
 
+    # write e_bounds
+    e_bounds = phtn_src_energy_bounds("alara_inp")
+    e_bounds_str = ""
+    for e in e_bounds:
+        e = e/1e6  # convert unit to MeV
+        e_bounds_str += "{0}\n".format(e)
+    with open("e_bounds", 'w') as f:
+        f.write(e_bounds_str)
+
+    mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')
     if sub_voxel:
         geom = config.get('step1', 'geom')
         load(geom)
         cell_mats = cell_materials(geom)
+        p_src_num_cells = len(np.atleast_1d(mesh.cell_number[
+            next(mesh.iter_ve())]))
     else:
         cell_mats = None
+        p_src_num_cells = 1
+    tag_size = (len(e_bounds) -1) * p_src_num_cells
+    mesh.tag(tag_name, np.zeros(tag_size, dtype=float), 'nat_mesh',
+                 size=tag_size, dtype=float)
+
+    # write phtn_src into h5 file
     h5_file = 'phtn_src.h5'
     if not isfile(h5_file):
         photon_source_to_hdf5('phtn_src')
+
     intensities = "Total photon source intensities (p/s)\n"
-    mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')
     for i, dc in enumerate(decay_times):
         print('Writing source for decay time: {0}'.format(dc))
         tags = {('TOTAL', dc): tag_name}
@@ -188,18 +207,10 @@ def step2():
                                                   sub_voxel=sub_voxel)
         intensities += "{0}: {1}\n".format(dc, intensity)
         # create a blank mesh for step 2:
-        mesh.delete_tag(tag_name)
+#        mesh.source_density[:] = np.zeros(shape=(len(mesh), tag_size), dtype=float)
  
     with open(tot_phtn_src_intensities, 'w') as f:
         f.write(intensities)
-
-    e_bounds = phtn_src_energy_bounds("alara_inp")
-    e_bounds_str = ""
-    for e in e_bounds:
-        e = e/1e6  # convert unit to MeV
-        e_bounds_str += "{0}\n".format(e)
-    with open("e_bounds", 'w') as f:
-        f.write(e_bounds_str)
 
     print('R2S step2 complete.')
 
