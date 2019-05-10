@@ -177,7 +177,6 @@ def photon_source_to_hdf5(filename, chunkshape=(10000,)):
     f.close()
 
 
-@profile
 def photon_source_hdf5_to_mesh(mesh, filename, tags, sub_voxel=False,
                                cell_mats=None):
     """This function reads in an hdf5 file produced by photon_source_to_hdf5

@@ -157,7 +157,6 @@ def step1():
     print('R2S step1 complete, run ALARA with the command:')
     print('>> alara alara_inp > output.txt')
 
-@profile
 def step2():
     config = ConfigParser.ConfigParser()
     config.read(config_filename)
@@ -206,8 +205,6 @@ def step2():
         intensity = total_photon_source_intensity(mesh, tag_name,
                                                   sub_voxel=sub_voxel)
         intensities += "{0}: {1}\n".format(dc, intensity)
-        # create a blank mesh for step 2:
-#        mesh.source_density[:] = np.zeros(shape=(len(mesh), tag_size), dtype=float)
  
     with open(tot_phtn_src_intensities, 'w') as f:
         f.write(intensities)
