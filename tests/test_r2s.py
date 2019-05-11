@@ -465,11 +465,16 @@ def _r2s_test_step2(r2s_run_dir):
     f5 = filecmp.cmp(t_p_src, exp_t_p_src)
     f6 = True
     # skip test if h5diff not exist
+    if 'unstructured' in r2s_run_dir:
+        ele_type = 'Tet4'
+    else:
+        ele_type = 'Hex8'
     is_h5diff = os.system('which h5diff')
     if is_h5diff == 0:
         # compare two h5 files
         command = ''.join(['h5diff --relative=1e-6 ', src_c1, ' ', exp_src_c1,
-            ' /tstt/elements/Hex8/tags/source_density /tstt/elements/Hex8/tags/source_density'])
+            ' /tstt/elements/', ele_type, '/tags/source_density',
+            ' /tstt/elements/', ele_type, '/tags/source_density'])
         diff_flag = os.system(command)
         # return value 0 if no difference, 1 if differences found, 2 if error
         f6 = True if diff_flag == 0 else False
@@ -480,7 +485,7 @@ def _r2s_test_step2(r2s_run_dir):
     os.remove(e_bounds)
     os.remove(p_src)
     os.remove(t_p_src)
-    #os.remove(src_c1)
+    os.remove(src_c1)
     os.remove(dst)
 
     assert_equal(f4, True)
