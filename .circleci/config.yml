@@ -1,4 +1,4 @@
-version: 2.1
+version: 2.2
 # Executors:
 # Alias the environment on which run the different jobs
 # i.e. in this case, docker image in which the jobs will be ran
