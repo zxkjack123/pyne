@@ -1,4 +1,4 @@
-version: 2.2
+version: 2.1
 # Executors:
 # Alias the environment on which run the different jobs
 # i.e. in this case, docker image in which the jobs will be ran
@@ -53,7 +53,7 @@ commands:
     steps:
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - save_cache:
-          key: v1-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
+          key: v2-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
           paths:
             - ~/
 
@@ -68,7 +68,7 @@ commands:
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
           keys:
-          key: v1-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
+          key: v2-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
 
   # Checkout and build PyNE  
   checkout_build:
