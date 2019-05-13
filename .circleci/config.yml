@@ -53,6 +53,7 @@ commands:
     steps:
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - save_cache:
+          keys: v2
           key: v2-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
           paths:
             - ~/
@@ -67,7 +68,7 @@ commands:
     steps:
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
-          keys:
+          keys: v2
           key: v2-repo-<< parameters.build >>{{ checksum ".circle-sha" }}
 
   # Checkout and build PyNE  
