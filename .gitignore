@@ -27,6 +27,7 @@ pyne/*/*.cpp
 
 # Ignore data &binary files
 *.h5
+!/tests/files_test*/*.h5
 *.ace
 
 # Ignore specific files
