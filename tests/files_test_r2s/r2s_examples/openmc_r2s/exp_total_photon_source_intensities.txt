@@ -1,2 +1,2 @@
 Total photon source intensities (p/s)
-1E3 s: 59414012.08569663
+1E3 s: 58698794.961101316
