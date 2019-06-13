@@ -27,7 +27,6 @@ pyne/*/*.cpp
 
 # Ignore data &binary files
 *.h5
-!/tests/files_test*/*.h5
 *.ace
 
 # Ignore specific files
@@ -64,3 +63,6 @@ tests/epdl97_eedl_Pb
 
 # Rever
 rever/
+
+# exception for specific file
+!/tests/files_test_r2s/r2s_examples/*/*.h5
