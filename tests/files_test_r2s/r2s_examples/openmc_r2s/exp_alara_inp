@@ -176,8 +176,6 @@ end
 
 cooling
     1E3 s
-    12 h
-    3.0 d
 end
 
 material_lib alara_matlib
