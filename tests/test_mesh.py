@@ -114,7 +114,7 @@ def test_ve_center():
 def test_structured_mesh_from_coords():
     sm = Mesh(structured_coords=[range(1, 5), range(1, 4), range(1, 3)],
               structured=True)
-    assert_true(sm.dims == [0, 0, 0, 3, 2, 1])
+    assert_true(sm.dims == (0, 0, 0, 3, 2, 1))
     assert_array_equal(sm.structured_coords, [
                        range(1, 5), range(1, 4), range(1, 3)])
     assert_equal(sm.structured_ordering, 'xyz')
@@ -133,7 +133,7 @@ def test_create_by_set():
     coords[2::3] = np.repeat(pnts, pnts.size * pnts.size)
     a = scdi.construct_box(low, high, coords).box_set()
     sm = Mesh(mesh=mesh, structured_set=a, structured=True)
-    assert_true(sm.dims == [0, 0, 0, 1, 1, 1])
+    assert_true(sm.dims == (0, 0, 0, 1, 1, 1))
 
 
 def test_create_by_file():
@@ -141,19 +141,19 @@ def test_create_by_file():
                             "files_mesh_test/")
     filename += "grid543.h5m"
     sm = Mesh(mesh=filename, structured=True)
-    assert_true(sm.dims == [1, 11, -5, 5, 14, -3])
+    assert_true(sm.dims == (1, 11, -5, 5, 14, -3))
     # # This mesh is interesting because the i/j/k space is not numbered from
     # # zero. Check that divisions are correct
 
-    assert_equal(sm.structured_get_divisions("x"), [1., 2., 3., 4., 5.])
-    assert_equal(sm.structured_get_divisions("y"), [1.0, 5.0, 10.0, 15.0])
-    assert_equal(sm.structured_get_divisions("z"), [-10.0, 2.0, 12.0])
+    assert_equal(sm.structured_get_divisions("x"), (1., 2., 3., 4., 5.))
+    assert_equal(sm.structured_get_divisions("y"), (1.0, 5.0, 10.0, 15.0))
+    assert_equal(sm.structured_get_divisions("z"), (-10.0, 2.0, 12.0))
 
     assert_equal(len(sm.structured_coords[0]), len(np.linspace(1, 5, num=5)))
     for a, e in zip(sm.structured_coords[0], np.linspace(1, 5, num=5)):
         assert_equal(a, e)
-    assert_equal(sm.structured_coords[1], [1.0, 5.0, 10.0, 15.0])
-    assert_equal(sm.structured_coords[2], [-10.0, 2.0, 12.0])
+    assert_equal(sm.structured_coords[1], (1.0, 5.0, 10.0, 15.0))
+    assert_equal(sm.structured_coords[2], (-10.0, 2.0, 12.0))
 
     # loading a test file without structured mesh metadata should raise an
     # error
@@ -215,9 +215,9 @@ def test_structured_get_vertex():
 
 
 def test_get_divs():
-    x = [1, 2.5, 4, 6.9]
-    y = [-12, -10, -.5]
-    z = [100, 200]
+    x = (1, 2.5, 4, 6.9)
+    y = (-12, -10, -.5)
+    z = (100, 200)
 
     sm = Mesh(structured_coords=[x, y, z], structured=True)
 
@@ -240,8 +240,8 @@ def test_iter_structured_idx():
 class TestArithmetic():
 
     def arithmetic_mesh_setup(self):
-        self.mesh_1 = Mesh(structured_coords=[
-                           [-1, 0, 1], [-1, 0, 1], [0, 1]], structured=True)
+        self.mesh_1 = Mesh(structured_coords=(
+                           (-1, 0, 1), (-1, 0, 1), (0, 1)), structured=True)
         volumes1 = list(self.mesh_1.structured_iterate_hex("xyz"))
         volumes2 = list(self.mesh_1.structured_iterate_hex("xyz"))
         flux_tag = self.mesh_1.mesh.tag_get_handle("flux",
@@ -252,8 +252,8 @@ class TestArithmetic():
         flux_data = [1.0, 2.0, 3.0, 4.0]
         self.mesh_1.mesh.tag_set_data(flux_tag, volumes1, flux_data)
 
-        self.mesh_2 = Mesh(structured_coords=[
-                           [-1, 0, 1], [-1, 0, 1], [0, 1]], structured=True)
+        self.mesh_2 = Mesh(structured_coords=(
+                           (-1, 0, 1), (-1, 0, 1), (0, 1)), structured=True)
         volumes1 = list(self.mesh_2.structured_iterate_hex("xyz"))
         volumes2 = list(self.mesh_2.structured_iterate_hex("xyz"))
         flux_tag = self.mesh_2.mesh.tag_get_handle("flux",
@@ -265,7 +265,7 @@ class TestArithmetic():
         self.mesh_2.mesh.tag_set_data(flux_tag, volumes1, flux_data)
 
     def arithmetic_statmesh_setup(self):
-        self.statmesh_1 = StatMesh(structured_coords=[[-1, 0, 1], [-1, 0, 1], [0, 1]],
+        self.statmesh_1 = StatMesh(structured_coords=((-1, 0, 1), (-1, 0, 1), (0, 1)),
                                    structured=True)
         volumes1 = list(self.statmesh_1.structured_iterate_hex("xyz"))
         volumes2 = list(self.statmesh_1.structured_iterate_hex("xyz"))
@@ -284,7 +284,7 @@ class TestArithmetic():
         self.statmesh_1.mesh.tag_set_data(flux_tag, volumes1, flux_data)
         self.statmesh_1.mesh.tag_set_data(error_tag, volumes2, error_data)
 
-        self.statmesh_2 = StatMesh(structured_coords=[[-1, 0, 1], [-1, 0, 1], [0, 1]],
+        self.statmesh_2 = StatMesh(structured_coords=((-1, 0, 1), (-1, 0, 1), (0, 1)),
                                    structured=True)
         volumes1 = list(self.statmesh_2.structured_iterate_hex("xyz"))
         volumes2 = list(self.statmesh_2.structured_iterate_hex("xyz"))

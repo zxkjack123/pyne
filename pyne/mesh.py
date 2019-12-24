@@ -652,7 +652,7 @@ class Mesh(object):
     mesh : PyMOAB core instance
     structured : bool
         True for structured mesh.
-    structured_coords : list of lists
+    structured_coords : tuple of tuples
         A list containing lists of x_points, y_points and z_points that make up
         a structured mesh.
     structured_ordering : str
@@ -669,7 +669,7 @@ class Mesh(object):
             Either a PyMOAB core instance or a file name of a PyMOAB mesh file.
         structured : bool, optional
             True for structured mesh.
-        structured_coords : list of lists, optional
+        structured_coords : tuple of tuples, optional
             A list containing lists of x_points, y_points and z_points
             that make up a structured mesh.
         structured_set : PyMOAB entity set handle, optional
@@ -807,16 +807,16 @@ class Mesh(object):
                                 "C. Mesh coordinates\n"
                                 "D. Structured entity set AND PyMOAB instance")
 
-            self.dims = list(self.mesh.tag_get_data(self.mesh.tag_get_handle(_BOX_DIMS_TAG_NAME),
-                                                    self.structured_set, flat=True))
+            self.dims = tuple(self.mesh.tag_get_data(self.mesh.tag_get_handle(
+                _BOX_DIMS_TAG_NAME), self.structured_set, flat=True))
 
-            self.vertex_dims = list(self.dims[0:3]) \
-                + [x + 1 for x in self.dims[3:6]]
+            self.vertex_dims = tuple(self.dims[0:3]) \
+                + tuple(x + 1 for x in self.dims[3:6])
 
             if self.structured_coords is None:
-                self.structured_coords = [self.structured_get_divisions("x"),
+                self.structured_coords = (self.structured_get_divisions("x"),
                                           self.structured_get_divisions("y"),
-                                          self.structured_get_divisions("z")]
+                                          self.structured_get_divisions("z"))
         else:
             # Unstructured mesh cases
             # Error if structured arguments are passed
@@ -1321,7 +1321,7 @@ class Mesh(object):
         ## sometimes the dim is the ascii of the 'x', 'y', 'z'
         if len(dim) == 1 and dim in "xyz":
             idx = "xyz".find(dim)
-            return [self.mesh.get_coords(v)[idx] for v in self.structured_iterate_vertex(dim)]
+            return tuple(self.mesh.get_coords(v)[idx] for v in self.structured_iterate_vertex(dim))
 
         else:
             raise MeshError("Invalid dimension: {0}".format(str(dim)))
@@ -1536,7 +1536,7 @@ class MeshTally(StatMesh):
         The locations of mesh vertices in the y direction.
     z_bounds : tuple of floats
         The locations of mesh vertices in the z direction.
-    dims : list
+    dims : tuple
         Dimensions of the mesh.
     num_ves : int
         Number of volume elements.
