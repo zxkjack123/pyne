@@ -121,15 +121,15 @@ def test_get_coord_sys_1D():
         raise SkipTest
 
     # Create mesh
-    xvals = [0.0, 2.0]
-    yvals = [0.0, 3.0]
-    zvals = [-1.0, 0.0, 1.0]
+    xvals = (0.0, 2.0)
+    yvals = (0.0, 3.0)
+    zvals = (-1.0, 0.0, 1.0)
     mesh = Mesh(structured_coords=[xvals, yvals, zvals], structured=True,
                 structured_ordering='xyz')
 
     # Expected values
     igeom_expected = 'slab'
-    bounds_expected = {'z': [-1.0, 0.0, 1.0]}
+    bounds_expected = {'z': (-1.0, 0.0, 1.0)}
 
     igeom, bounds = partisn._get_coord_sys(mesh)
     assert(igeom == igeom_expected)
@@ -144,15 +144,15 @@ def test_get_coord_sys_2D():
         raise SkipTest
 
     # Create mesh
-    xvals = [-1.0, 0.0, 2.0]
-    yvals = [-3.0, 3.0]
-    zvals = [-1.0, 0.0, 1.0]
+    xvals = (-1.0, 0.0, 2.0)
+    yvals = (-3.0, 3.0)
+    zvals = (-1.0, 0.0, 1.0)
     mesh = Mesh(structured_coords=[xvals, yvals, zvals], structured=True,
                 structured_ordering='xyz')
 
     # Expected values
     igeom_expected = 'x-y'
-    bounds_expected = {'x': [-1.0, 0.0, 2.0], 'z': [-1.0, 0.0, 1.0]}
+    bounds_expected = {'x': (-1.0, 0.0, 2.0), 'z': (-1.0, 0.0, 1.0)}
 
     igeom, bounds = partisn._get_coord_sys(mesh)
     assert(igeom == igeom_expected)
@@ -167,16 +167,16 @@ def test_get_coord_sys_3D():
         raise SkipTest
 
     # Create mesh
-    xvals = [-1.0, 0.0, 2.0]
-    yvals = [-3.0, 0.0, 3.0]
-    zvals = [-1.0, 0.0, 1.0]
+    xvals = (-1.0, 0.0, 2.0)
+    yvals = (-3.0, 0.0, 3.0)
+    zvals = (-1.0, 0.0, 1.0)
     mesh = Mesh(structured_coords=[xvals, yvals, zvals], structured=True,
                 structured_ordering='xyz')
 
     # Expected values
     igeom_expected = 'x-y-z'
-    bounds_expected = {'x': [-1.0, 0.0, 2.0], 'y': [-3.0, 0.0, 3.0],
-                       'z': [-1.0, 0.0, 1.0]}
+    bounds_expected = {'x': (-1.0, 0.0, 2.0), 'y': (-3.0, 0.0, 3.0),
+                       'z': (-1.0, 0.0, 1.0)}
 
     igeom, bounds = partisn._get_coord_sys(mesh)
     assert(igeom == igeom_expected)
