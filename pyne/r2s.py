@@ -3,7 +3,7 @@ from warnings import warn
 from pyne.utils import QAWarning
 import numpy as np
 
-from pyne.mesh import Mesh
+from pyne.mesh import Mesh, MeshTally
 from pyne.mcnp import Meshtal
 from pyne.alara import mesh_to_fluxin, record_to_geom, photon_source_to_hdf5, \
     photon_source_hdf5_to_mesh, responses_output_zone
@@ -11,8 +11,8 @@ from pyne.alara import mesh_to_fluxin, record_to_geom, photon_source_to_hdf5, \
 warn(__name__ + " is not yet QA compliant.", QAWarning)
 
 
-def resolve_mesh(mesh_reference, tally_num=None, flux_tag="n_flux",
-                 output_material=False):
+def resolve_mesh(mesh_reference, transport_code='MCNP', tally_num=None,
+        flux_tag="n_flux", output_material=False):
     """This function creates a method that will consume many mesh-like objects
        (e.g. mesh, an h5m file, a meshtal file, etc) and returns a robust PyNE
        mesh object accordingly.
@@ -24,7 +24,9 @@ def resolve_mesh(mesh_reference, tally_num=None, flux_tag="n_flux",
         The source of the neutron flux information. This can be a PyNE Meshtal
         object, a pyne Mesh object, or the filename an MCNP meshtal file, or
         the filename of an unstructured mesh tagged with fluxes.
-    tally_num : int
+    transport_code: str, optional
+        Transport code name. Currently support 'MCNP' and 'OpenMC'.
+    tally_num : int, optional
         The MCNP FMESH4 tally number of the neutron flux tally within the
         meshtal file.
     flux_tag : str, optional
@@ -42,10 +44,19 @@ def resolve_mesh(mesh_reference, tally_num=None, flux_tag="n_flux",
     # mesh_reference is Mesh object
     if isinstance(mesh_reference, Mesh):
         m = mesh_reference
+    # mesh_reference is a file
+    elif isinstance(mesh_reference, str) and not isfile(mesh_reference):
+        raise ValueError("File {0} not found!".format(mesh_reference))
     #  mesh_reference is unstructured mesh file
     elif isinstance(mesh_reference, str) and isfile(mesh_reference) \
             and mesh_reference.endswith(".h5m"):
         m = Mesh(structured=False, mesh=mesh_reference)
+    # mesh_reference is a openmc statepoint file
+    elif isinstance(mesh_reference, str) and isfile(mesh_reference) \
+            and mesh_reference.endswith(".h5"):
+            m = openmc_utils.create_meshtally(mesh_reference, tally_id=tally_num,
+                    tag_names=(flux_tag, flux_tag + "_err", flux_tag + "_total",
+                               flux_tag + "_err_total"))
     #  mesh_reference is Meshtal or meshtal file
     elif tally_num is not None:
         #  mesh_reference is meshtal file
@@ -65,8 +76,8 @@ def resolve_mesh(mesh_reference, tally_num=None, flux_tag="n_flux",
     # mesh_references is a Meshtal file but no tally_num provided
     else:
         raise ValueError(
-            "Need to provide a tally number when reading a Meshtal file")
-
+            "Need to provide a tally number when reading a Meshtal or "
+            "statepoint file")
     return m
 
 
@@ -84,8 +95,9 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
     ----------
     flux_mesh : PyNE Meshtal object, Mesh object, or str
         The source of the neutron flux information. This can be a PyNE Meshtal
-        object, a pyne Mesh object, or the filename an MCNP meshtal file, or
-        the filename of an unstructured mesh tagged with fluxes.
+        object, a pyne Mesh object, or the filename an MCNP meshtal or
+        an OpenMC state point file, or the filename of an unstructured mesh
+        tagged with fluxes.
     cell_mats : dict
         Maps geometry cell numbers to PyNE Material objects.
     cell_fracs : record array
@@ -231,3 +243,19 @@ def total_photon_source_intensity(m, tag_name, sub_voxel=False):
             sv_data = ve_data[num_e_groups*svid:num_e_groups*(svid+1)]
             intensity += vol * np.sum(sv_data)
     return intensity
+
+
+def photon_source_add_filetype(filename):
+    """
+    This function is used to add 'filetype' attribute for PyNE R2S photon
+    source file 'source_x.h5m'. For OpenMC source sampling.
+    Parameters
+    ----------
+    filename : string
+        Filename of the 'source_x.h5m'.
+    """
+
+    with tb.open_file(filename, 'r+') as h5f:
+        h5f.root._f_setattr('filetype',
+                'pyne_r2s_source'.encode(encoding='ascii'))
+    return
