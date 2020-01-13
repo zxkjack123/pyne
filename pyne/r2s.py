@@ -2,6 +2,7 @@ from os.path import isfile
 from warnings import warn
 from pyne.utils import QAWarning
 import numpy as np
+import tables as tb
 
 from pyne.mesh import Mesh, MeshTally
 from pyne.mcnp import Meshtal
@@ -146,7 +147,8 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
         Path to the wdr file.
     """
 
-    m = resolve_mesh(flux_mesh, tally_num, flux_tag, output_material)
+    m = resolve_mesh(flux_mesh, tally_num=tally_num, flux_tag=flux_tag,
+            output_material=output_material)
 
     if output_material:
         m.cell_fracs_to_mats(cell_fracs, cell_mats)
