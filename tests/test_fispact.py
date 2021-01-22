@@ -1,4 +1,5 @@
 """fispact tests """
+import os
 import nose 
 from nose.tools import assert_equal, assert_true, assert_almost_equal, assert_raises
 
@@ -6,8 +7,11 @@ import warnings
 from pyne.utils import QAWarning
 warnings.simplefilter("ignore", QAWarning)
 
+from pyne.mesh import HAVE_PYMOAB
+from pyne.mesh import Mesh, StatMesh, MeshError
 from pyne import fispact
 
+thisdir = os.path.dirname(__file__)
 fispactii_path="fispii.out"
 
 fo=fispact.read_fis_out(fispactii_path)
@@ -127,4 +131,36 @@ def test_read_inv():
     assert_equal(float(ts1.inventory[-1,6]), 0)
     assert_equal(float(ts1.inventory[-1,7]), 0)
  
+def test_write_fluxin_single():
+    """This function tests the mesh_to_fispact_fluxin function for a single energy
+    group case.
+    """
+
+    if not HAVE_PYMOAB:
+        raise SkipTest
+
+    output_dir = os.path.join(thisdir, "files_test_fispact")
+    forward_fluxin = os.path.join(thisdir, "files_test_fispact",
+                                  "fluxin_single_forward.txt")
+    flux_mesh = Mesh(structured=True,
+                     structured_coords=[[0, 1, 2], [0, 1, 2], [0, 1]])
+    tag_flux = flux_mesh.tag(name="flux", size=1, dtype=float)
+    flux_data = [1, 2, 3, 4]
+    ves = flux_mesh.structured_iterate_hex("xyz")
+    for i, ve in enumerate(ves):
+        flux_mesh.flux[i] = flux_data[i]
+
+    # test forward writting
+    fispact.mesh_to_fispact_fluxin(flux_mesh, flux_tag="flux",
+                                   fluxin_dir=output_dir, reverse=False)
+
+    for i, ve in enumerate(ves):
+        output = os.path.join(output_dir, ''.join(["ve", str(i), ".flx"]))
+        with open(output) as f:
+            written = f.readlines()
+        with open(forward_fluxin) as f:
+            expected = f.readlines()
+        assert_equal(written, expected)
+        if os.path.isfile(output):
+            os.remove(output)
 
