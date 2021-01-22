@@ -10,9 +10,29 @@ data
 this module has methods for parsing the fispact output file,
 extracting data, processing the data
 """
-
+import os
 import numpy as np
+from pyne.mesh import Mesh, HAVE_PYMOAB
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
+try:
+    import pypact
+    HAVE_PYPACT = True
+except ImportError:
+    HAVE_PYPACT = False
+    warn("The pypact optional dependency could not be imported. "
+         "The functions related to FISPACT input file writor may be incomplete.", ImportWarning)
+
+if HAVE_PYMOAB:
+    from pyne.mesh import mesh_iterate
+else:
+    warn("The PyMOAB optional dependency could not be imported. "
+         "Some aspects of the mesh module may be incomplete.", ImportWarning)
+from pyne.alara import _output_flux
 
 class FispactOutput():
     """ fispact output data"""
@@ -415,4 +435,84 @@ def read_parameter(data, sub):
     line = line.split(" ")
     param = float(line[0])
     return param
+
+################################
+# functions using pypact module
+################################
+def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir="./", reverse=False,
+                           sub_voxel=False, cell_fracs=None, cell_mats=None):
+    """This function creates FISPACT-II flux files from fluxes tagged on a PyNE
+    Mesh object. Fluxes are printed in the order of the flux_mesh.__iter__().
+
+    Parameters
+    ----------
+    flux_mesh : PyNE Mesh object
+        Contains the mesh with fluxes tagged on each volume element.
+    flux_tag : string
+        The name of the tag of the flux mesh. Flux values for different energy
+        groups are assumed to be represented as vector tags.
+    fluxin_dir : string
+        The directory of the FISPACT-II flux files.
+    reverse : bool
+        If true, fluxes will be printed in the reverse order as they appear in
+        the flux vector tagged on the mesh.
+    sub_voxel: bool, optional
+        If true, sub-voxel r2s work flow will be sued. Flux of a voxel will
+        be duplicated c times. Where c is the cell numbers of that voxel.
+    cell_fracs : structured array, optional
+        The output from dagmc.discretize_geom(). A sorted, one dimensional
+        array, each entry containing the following fields:
+
+            :idx: int
+                The volume element index.
+            :cell: int
+                The geometry cell number.
+            :vol_frac: float
+                The volume fraction of the cell withing the mesh ve.
+            :rel_error: float
+                The relative error associated with the volume fraction.
+
+        The array must be sorted with respect to both idx and cell, with
+        cell changing fastest.
+    cell_mats : dict, optional
+        Maps geometry cell numbers to PyNE Material objects.
+
+        The cell_fracs and cell_mats are used only when sub_voxel=True.
+        If sub_voxel=False, neither cell_fracs nor cell_mats will be used.
+
+    """
+    tag_flux = flux_mesh.get_tag(flux_tag)
+
+    # find number of e_groups
+    e_groups = tag_flux[list(mesh_iterate(flux_mesh.mesh))[0]]
+    e_groups = np.atleast_1d(e_groups)
+    num_e_groups = len(e_groups)
+
+    # Establish for loop bounds based on if forward or backward printing
+    # is requested
+    if not reverse:
+        start = 0
+        stop = num_e_groups
+        direction = 1
+    else:
+        start = num_e_groups - 1
+        stop = -1
+        direction = -1
+
+    if not sub_voxel:
+        for i, mat, ve in flux_mesh:
+            output = u""
+            # print flux data to file
+            output = _output_flux(ve, tag_flux, output, start, stop, direction)
+            filename = os.path.join(fluxin_dir, ''.join(["ve", str(i), ".flx"]))
+            with open(filename, "w") as f:
+                f.write(output)
+    else:
+        ves = list(flux_mesh.iter_ve())
+        for row in cell_fracs:
+            if len(cell_mats[row['cell']].comp) != 0:
+                output = _output_flux(ves[row['idx']], tag_flux, output, start,
+                                      stop, direction)
+
+
 
