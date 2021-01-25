@@ -161,6 +161,60 @@ def test_write_fluxin_single():
     with open(forward_fluxin) as f:
         expected = f.readlines()
     assert_equal(written, expected)
-    if os.path.isfile(output):
-        os.remove(output)
+
+    # remove generated output
+    for i in range(4):
+        output = os.path.join(output_dir, ''.join(["ve", str(i), ".flx"]))
+        if os.path.isfile(output):
+            os.remove(output)
+
+def test_write_fluxin_multiple():
+    """This function tests the mesh_to_fispact_fluxin function for a multiple
+    energy group case.
+    """
+
+    if not HAVE_PYMOAB:
+        raise SkipTest
+
+    output_dir = os.path.join(thisdir, "files_test_fispact")
+    forward_fluxin = os.path.join(thisdir, "files_test_fispact",
+                                  "fluxin_multiple_forward.txt")
+    reverse_fluxin = os.path.join(thisdir, "files_test_fispact",
+                                  "fluxin_multiple_reverse.txt")
+
+    flux_mesh = Mesh(structured=True,
+                     structured_coords=[[0, 1, 2], [0, 1], [0, 1]])
+    flux_data = [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14]]
+    flux_mesh.tag("flux", flux_data, 'nat_mesh', size=7, dtype=float)
+
+    # test forward writting of first ve
+    fispact.mesh_to_fispact_fluxin(flux_mesh, "flux", output_dir, False)
+    output = os.path.join(output_dir, ''.join(["ve0.flx"]))
+    with open(output) as f:
+        written = f.readlines()
+
+    with open(forward_fluxin) as f:
+        expected = f.readlines()
+    assert_equal(written, expected)
+
+    # remove generated output
+    for i in range(4):
+        output = os.path.join(output_dir, ''.join(["ve", str(i), ".flx"]))
+        if os.path.isfile(output):
+            os.remove(output)
+
+    # test reverse writting of first ve
+    fispact.mesh_to_fispact_fluxin(flux_mesh, "flux", output_dir, True)
+    output = os.path.join(output_dir, ''.join(["ve0.flx"]))
+    with open(output) as f:
+        written = f.readlines()
+    with open(reverse_fluxin) as f:
+        expected = f.readlines()
+    assert_equal(written, expected)
+
+    # remove generated output
+    for i in range(4):
+        output = os.path.join(output_dir, ''.join(["ve", str(i), ".flx"]))
+        if os.path.isfile(output):
+            os.remove(output)
 

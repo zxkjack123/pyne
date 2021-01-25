@@ -539,7 +539,7 @@ def _output_flux(ve, tag_flux, output, start, stop, direction):
             output += u"\n"
 
     output += u"\n"
-    output += u"1.0\n\n"
+    output += u"{:.6E}\n\n".format(1.0)
     return output
 
 
