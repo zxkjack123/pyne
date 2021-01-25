@@ -13,6 +13,8 @@ extracting data, processing the data
 import os
 import numpy as np
 from pyne.mesh import Mesh, HAVE_PYMOAB
+from pyne.material import Material, from_atom_frac
+from pyne.nucname import name
 
 try:
     basestring
@@ -20,7 +22,7 @@ except NameError:
     basestring = str
 
 try:
-    import pypact
+    import pypact as pp
     HAVE_PYPACT = True
 except ImportError:
     HAVE_PYPACT = False
@@ -32,7 +34,6 @@ if HAVE_PYMOAB:
 else:
     warn("The PyMOAB optional dependency could not be imported. "
          "Some aspects of the mesh module may be incomplete.", ImportWarning)
-from pyne.alara import _output_flux
 
 class FispactOutput():
     """ fispact output data"""
@@ -543,4 +544,54 @@ def _output_flux(ve, tag_flux, output, start, stop, direction):
     return output
 
 
-
+def write_fispact_input_single_ve(filename, material):
+    """
+    """
+    id = pp.InputData(name=filename)
+    
+    # control setup
+    id.overwriteExisting()
+    id.enableJSON()
+    id.approxGammaSpectrum()
+    id.readXSData(709)
+    id.readDecayData()
+    id.enableHalflifeInOutput()
+    id.enableHazardsInOutput()
+    id.setProjectile(pp.PROJECTILE_NEUTRON)
+    id.enableSystemMonitor()
+    id.readGammaGroup()
+    id.enableInitialInventoryInOutput()
+    id.setLogLevel(pp.LOG_SEVERITY_ERROR)
+    
+    # thresholds
+    id.setXSThreshold(1e-12)
+    id.setAtomsThreshold(1e5)
+    
+    ## set target
+    #id.setDensity(19.5)
+    #id.setMass(1.0)
+    #id.addElement('Ti', percentage=80.0)
+    #id.addElement('Fe', percentage=14.8)
+    #id.addElement('Cr', percentage=5.2)
+    id.setDensity(material.density)
+    id.setFuel()
+    atom_dens = material.to_atom_dens()
+    for nuc, comp in material.comp.items():
+        # add isotpoes in unit of atoms/kg
+        id.addIsotope(name(nuc), atom_dens[nuc]/material.density*1000.0) 
+    
+    # irradiate and cooling times
+    id.addIrradiation(300.0, 1.1e15)
+    id.addCooling(10.0)
+    id.addCooling(100.0)
+    id.addCooling(1000.0)
+    id.addCooling(10000.0)
+    id.addCooling(100000.0)
+    
+    # validate data
+    id.validate()
+    
+    #print(pp.to_string(id))
+    
+    # write to file
+    pp.to_file(id, '{}.i'.format(id.name))

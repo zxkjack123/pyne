@@ -10,6 +10,7 @@ warnings.simplefilter("ignore", QAWarning)
 from pyne.mesh import HAVE_PYMOAB
 from pyne.mesh import Mesh, StatMesh, MeshError
 from pyne import fispact
+from pyne.material import Material
 
 thisdir = os.path.dirname(__file__)
 fispactii_path="fispii.out"
@@ -218,3 +219,13 @@ def test_write_fluxin_multiple():
         if os.path.isfile(output):
             os.remove(output)
 
+
+def test_write_fispact_input_single_ve():
+    """This function tests the write_fispact_input function for test.
+    """
+    h2o = {10010000: 0.11191487328808077, 80160000: 0.8880851267119192}
+    mat = Material(h2o, density=1.0)
+    output_dir = os.path.join(thisdir, "files_test_fispact")
+    filename = os.path.join(output_dir, "test")
+    fispact.write_fispact_input_single_ve(filename=filename, material=mat)
+    os.remove(filename+".i")
