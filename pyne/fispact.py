@@ -514,5 +514,33 @@ def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir="./", reverse=False,
                 output = _output_flux(ves[row['idx']], tag_flux, output, start,
                                       stop, direction)
 
+def _output_flux(ve, tag_flux, output, start, stop, direction):
+    """
+    This function is used to get neutron flux for fluxin for fispact
+
+    Parameters
+    ----------
+    ve : entity, a mesh sub-voxel
+    tag_flux : array, neutron flux of the sub-voxel
+    output : string
+    start : int
+    stop : int
+    direction: int
+    """
+
+    count = 0
+    flux_data = np.atleast_1d(tag_flux[ve])
+    for i in range(start, stop, direction):
+        output += u"{:.6E} ".format(flux_data[i])
+        # fluxin formatting: create a new line
+        # after every 6th entry
+        count += 1
+        if count % 6 == 0:
+            output += u"\n"
+
+    output += u"\n"
+    output += u"1.0\n\n"
+    return output
+
 
 

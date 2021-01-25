@@ -154,13 +154,13 @@ def test_write_fluxin_single():
     fispact.mesh_to_fispact_fluxin(flux_mesh, flux_tag="flux",
                                    fluxin_dir=output_dir, reverse=False)
 
-    for i, ve in enumerate(ves):
-        output = os.path.join(output_dir, ''.join(["ve", str(i), ".flx"]))
-        with open(output) as f:
-            written = f.readlines()
-        with open(forward_fluxin) as f:
-            expected = f.readlines()
-        assert_equal(written, expected)
-        if os.path.isfile(output):
-            os.remove(output)
+    # test flux file of the first ve
+    output = os.path.join(output_dir, ''.join(["ve0.flx"]))
+    with open(output) as f:
+        written = f.readlines()
+    with open(forward_fluxin) as f:
+        expected = f.readlines()
+    assert_equal(written, expected)
+    if os.path.isfile(output):
+        os.remove(output)
 
