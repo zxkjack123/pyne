@@ -596,7 +596,7 @@ def write_fispact_input_single_ve(filename, material):
     # write to file
     pp.to_file(id, '{}.i'.format(id.name))
 
-def write_fispact_input(mesh, cell_fracs, cell_mats, sub_voxel=False, input_dir="."):
+def write_fispact_input(mesh, cell_fracs, cell_mats, target_dir="."):
     """This function preforms the same task as alara.mesh_to_geom, except the
     geometry is on the basis of the stuctured array output of
     dagmc.discretize_geom rather than a PyNE material object with materials.
@@ -624,14 +624,21 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, sub_voxel=False, input_dir=
     cell_mats : dict
         Maps geometry cell numbers to PyNE Material objects. Each PyNE material
         object must have 'name' specified in Material.metadata.
-    sub_voxel : bool
-        If sub_voxel is True, the sub-voxel r2s will be used.
+    target_dir : str
+        The target directory for the fispact input files.
     """
-    for i, mat, ve in mesh:
-        filename = os.path.join(input_dir, ''.join(["ve", str(i)]))
-        mats = MultiMaterial()
-        with open(geom_file, 'w') as f:
-            f.write(geometry + volume + mat_loading + mixture)
-
+    if mesh.structured:
+        for i, mat, ve in mesh:
+            filename = os.path.join(target_dir, ''.join(["ve", str(i)]))
+            mats_map = {}
+            for svid in range(len(mesh.cell_fracs[0])):
+                if mesh.cell_number[i][svid] > 0:
+                    mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
+            mats = MultiMaterial(mats_map)
+            mat = mats.mix_by_volume()
+            if mat.density > 0: # mat could be void, but fispact do not write void material
+                write_fispact_input_single_ve(filename, mat)
+    else:
+        raise ValueError("unstructured mesh fispact input not supported!")
 
 
