@@ -2,6 +2,7 @@
 import os
 import nose 
 from nose.tools import assert_equal, assert_true, assert_almost_equal, assert_raises
+import numpy as np
 
 import warnings
 from pyne.utils import QAWarning
@@ -229,3 +230,29 @@ def test_write_fispact_input_single_ve():
     filename = os.path.join(output_dir, "test")
     fispact.write_fispact_input_single_ve(filename=filename, material=mat)
     os.remove(filename+".i")
+
+def test_write_fispact_input():
+    """This function tests the write_fispact_input function for test.
+    """
+    flux_mesh = Mesh(structured=True,
+                     structured_coords=[[0, 1, 2], [0, 1, 2], [0, 1]])
+    flux_data = [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14],
+                 [15, 16, 17, 18, 19, 20, 21],
+                 [22, 23, 24, 25, 26, 27, 28]]
+    flux_mesh.tag("flux", flux_data, 'nat_mesh', size=7, dtype=float)
+
+    cell_fracs = np.zeros(6, dtype=[('idx', np.int64),
+                                    ('cell', np.int64),
+                                    ('vol_frac', np.float64),
+                                    ('rel_error', np.float64)])
+    cell_fracs[:] = [(0, 11, 1, 0.0), (1, 11, 0.5, 0.0), (1, 12, 0.5, 0.0),
+                     (2, 11, 0.5, 0.0), (2, 13, 0.5, 0.0), (3, 13, 1, 0.0)]
+    flux_mesh.tag_cell_fracs(cell_fracs)
+    cell_mats = {11: Material({'H': 1.0}, density=1.0),
+                 12: Material({'He': 1.0}, density=1.0),
+                 13: Material({}, density=0.0, metadata={'name': 'void'})}
+
+    # write fispact input files
+    target_dir = os.path.join(thisdir, "files_test_fispact")
+    fispact.write_fispact_input(flux_mesh, cell_fracs, cell_mats, target_dir=target_dir)
+
