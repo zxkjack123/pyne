@@ -6,6 +6,7 @@ from warnings import warn
 from distutils.dir_util import remove_tree
 import filecmp
 from io import open
+import re
 
 from pyne._utils import fromstring_split, fromstring_token, endftod,\
                         use_fast_endftod, fromendf_tok, toggle_warnings,\
@@ -300,7 +301,8 @@ def line_almost_same(l1, l2, rel_tol=1e-9):
         return True
 
 
-def file_almost_same(f1, f2, rel_tol=1e-9):
+def file_almost_same(f1, f2, rel_tol=1e-9, ignore_comment=False,
+                     comment_patterns=None):
     """
     For some reasones, it's useful to compare two files that are almost the
     same. Two files, f1 and f2, the text contents are exactly the same, but
@@ -318,6 +320,10 @@ def file_almost_same(f1, f2, rel_tol=1e-9):
         Filename of file 2 or lines
     rel_tol : float
         Relative tolerance for float numbers
+    ignore_comment: bool
+        Ignore comment lines when compare two files.
+    comment_patterns: list
+        List of regular expressions that represent the comment lines.
 
     Returns:
     True : bool
@@ -349,6 +355,11 @@ def file_almost_same(f1, f2, rel_tol=1e-9):
         lines2 = lines2.strip().split(u'\n')
 
         # compare two files
+        # remove comment lines if ignore_comment are True
+        if ignore_comment:
+            lines1 = remove_comment_lines(lines1, comment_patterns)
+            lines2 = remove_comment_lines(lines2, comment_patterns)
+
         # check length of lines
         if len(lines1) != len(lines2):
             return False
@@ -457,3 +468,30 @@ def check_iterable(obj):
         print(obj.__str__(), "is not iterable")
         return False
     return True
+
+def remove_comment_lines(lines, patterns):
+    """Remove comment lines.
+
+    Parameters:
+    -----------
+    lines : list
+        List of the lines in a file.
+    patterns: list
+        List of regular expressions that represent the comment lines.
+
+    Returns:
+    lines : list
+        Lines without comment.
+    """
+
+    new_lines = []
+    for i in range(len(lines)):
+        is_comment = False
+        for j in range(len(patterns)):
+            pattern = re.compile(patterns[j])
+            if pattern.match(lines[i]):
+               is_comment = True 
+               break
+        if not is_comment:
+            new_lines.append(lines[i])
+    return new_lines
