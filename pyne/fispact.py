@@ -13,7 +13,7 @@ extracting data, processing the data
 import os
 import numpy as np
 from pyne.mesh import Mesh, HAVE_PYMOAB
-from pyne.material import Material, from_atom_frac
+from pyne.material import Material, from_atom_frac, MultiMaterial
 from pyne.nucname import name
 
 try:
@@ -440,7 +440,7 @@ def read_parameter(data, sub):
 ################################
 # functions using pypact module
 ################################
-def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir="./", reverse=False,
+def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir=".", reverse=False,
                            sub_voxel=False, cell_fracs=None, cell_mats=None):
     """This function creates FISPACT-II flux files from fluxes tagged on a PyNE
     Mesh object. Fluxes are printed in the order of the flux_mesh.__iter__().
@@ -595,3 +595,43 @@ def write_fispact_input_single_ve(filename, material):
     
     # write to file
     pp.to_file(id, '{}.i'.format(id.name))
+
+def write_fispact_input(mesh, cell_fracs, cell_mats, sub_voxel=False, input_dir="."):
+    """This function preforms the same task as alara.mesh_to_geom, except the
+    geometry is on the basis of the stuctured array output of
+    dagmc.discretize_geom rather than a PyNE material object with materials.
+    This allows for more efficient ALARA runs by minimizing the number of
+    materials in the ALARA matlib. This is done by treating mixtures that are
+    equal up to <sig_figs> digits to be the same mixture within ALARA.
+
+    Parameters
+    ----------
+    mesh : PyNE Mesh object
+        The Mesh object for which the geometry is discretized.
+    cell_fracs : structured array
+        The output from dagmc.discretize_geom(). A sorted, one dimensional
+        array, each entry containing the following fields:
+
+            :idx: int
+                The volume element index.
+            :cell: int
+                The geometry cell number.
+            :vol_frac: float
+                The volume fraction of the cell withing the mesh ve.
+            :rel_error: float
+                The relative error associated with the volume fraction.
+
+    cell_mats : dict
+        Maps geometry cell numbers to PyNE Material objects. Each PyNE material
+        object must have 'name' specified in Material.metadata.
+    sub_voxel : bool
+        If sub_voxel is True, the sub-voxel r2s will be used.
+    """
+    for i, mat, ve in mesh:
+        filename = os.path.join(input_dir, ''.join(["ve", str(i)]))
+        mats = MultiMaterial()
+        with open(geom_file, 'w') as f:
+            f.write(geometry + volume + mat_loading + mixture)
+
+
+
