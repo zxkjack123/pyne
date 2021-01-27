@@ -364,5 +364,19 @@ def test_check_iterable():
     assert(utils.check_iterable(obj))
 
 
+def remove_comment_lines():
+    # remove fispact style comment lines "<<*>>", "\* *"
+    lines = ["test", "<<comment>>", "* comment"]  
+    patterns = ['<<*>>', '\* *']
+    exp_lines = ["test"]  
+    lines = utils.remove_coment_lines(lines, patterns)
+    assert_array_equal(lines, exp_lines)
+    # remove mcnp style comment lines "C *", "c *"
+    lines = ["test", "C comment", "c comment"]  
+    patterns = ['C *', 'c *']
+    exp_lines = ["test"]  
+    lines = utils.remove_coment_lines(lines, patterns)
+    assert_array_equal(lines, exp_lines)
+
 if __name__ == "__main__":
     nose.runmodule()
