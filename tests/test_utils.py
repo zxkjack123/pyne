@@ -304,6 +304,18 @@ def test_file_almost_same():
     f2 = """l1\nl2 string2"""
     assert(utils.file_almost_same(f1, f2) == False)
 
+    # same content except fispact comments
+    f1 = """l1\n* c1\n<<c1>>"""
+    f2 = """l1\n* c2\n<<c2>>"""
+    assert(utils.file_almost_same(f1, f2, ignore_comment=True,
+           comment_patterns=['^\* *', '<<.*>>']))
+
+    # same content except mcnp comments
+    f1 = """l1\nC c1\nc c1"""
+    f2 = """l1\nC c1\nc c2"""
+    assert(utils.file_almost_same(f1, f2, ignore_comment=True,
+           comment_patterns=['C *', 'c *']))
+
 
 def test_block_in_blocks():
     # exactly in
@@ -365,16 +377,17 @@ def test_check_iterable():
 
 
 def remove_comment_lines():
-    # remove fispact style comment lines "<<*>>", "\* *"
-    lines = ["test", "<<comment>>", "* comment"]  
-    patterns = ['<<*>>', '\* *']
-    exp_lines = ["test"]  
+    # remove fispact style comment lines "<<*>>", "^\* *"
+    lines = ['test', '<<comment>>', '* comment']
+    patterns = ['<<.*>>', '^\* *']
+    exp_lines = ["test"] 
     lines = utils.remove_coment_lines(lines, patterns)
     assert_array_equal(lines, exp_lines)
-    # remove mcnp style comment lines "C *", "c *"
-    lines = ["test", "C comment", "c comment"]  
-    patterns = ['C *', 'c *']
-    exp_lines = ["test"]  
+
+    # remove mcnp style comment lines "^C *", "^c *"
+    lines = ["test", "C comment", "c comment"] 
+    patterns = ['^C *', '^c *']
+    exp_lines = ["test"] 
     lines = utils.remove_coment_lines(lines, patterns)
     assert_array_equal(lines, exp_lines)
 
