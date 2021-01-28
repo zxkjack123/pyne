@@ -559,12 +559,12 @@ def write_fispact_input_single_ve(filename, material):
     id.enableHazardsInOutput()
     id.setProjectile(pp.PROJECTILE_NEUTRON)
     id.enableSystemMonitor()
-    id.readGammaGroup()
+    #id.readGammaGroup()
     id.enableInitialInventoryInOutput()
     id.setLogLevel(pp.LOG_SEVERITY_ERROR)
     
     # thresholds
-    id.setXSThreshold(1e-12)
+    #id.setXSThreshold(1e-12)
     id.setAtomsThreshold(1e5)
     
     ## set target
@@ -578,7 +578,8 @@ def write_fispact_input_single_ve(filename, material):
     atom_dens = material.to_atom_dens()
     for nuc, comp in material.comp.items():
         # add isotpoes in unit of atoms/kg
-        id.addIsotope(name(nuc), atom_dens[nuc]/material.density*1000.0) 
+        # control the digits to avoid data entries too long
+        id.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
     
     # irradiate and cooling times
     id.addIrradiation(300.0, 1.1e15)
@@ -636,6 +637,7 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, target_dir="."):
                     mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
             mats = MultiMaterial(mats_map)
             mat = mats.mix_by_volume()
+            mat = mat.expand_elements()
             if mat.density > 0: # mat could be void, but fispact do not write void material
                 write_fispact_input_single_ve(filename, mat)
     else:
