@@ -558,7 +558,7 @@ def write_fispact_input_single_ve(filename, material):
     id.enableHalflifeInOutput()
     id.enableHazardsInOutput()
     id.setProjectile(pp.PROJECTILE_NEUTRON)
-    id.enableSystemMonitor()
+    #id.enableSystemMonitor()
     #id.readGammaGroup()
     id.enableInitialInventoryInOutput()
     id.setLogLevel(pp.LOG_SEVERITY_ERROR)
