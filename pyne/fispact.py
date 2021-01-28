@@ -553,7 +553,7 @@ def write_fispact_input_single_ve(filename, material):
     id.overwriteExisting()
     id.enableJSON()
     id.approxGammaSpectrum()
-    id.readXSData(709)
+    id.readXSData(175)
     id.readDecayData()
     id.enableHalflifeInOutput()
     id.enableHazardsInOutput()
