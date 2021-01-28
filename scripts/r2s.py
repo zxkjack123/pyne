@@ -26,6 +26,8 @@ config = \
 structured: True
 # Specify whether this problem uses sub-voxel r2s
 sub_voxel: False
+# Inventory code to use. ALARA or FISPACT-II
+inventory_code: ALARA
 
 [step1]
 # Path to MCNP MESHTAL file containing neutron fluxes or a DAG-MCNP5
@@ -123,6 +125,7 @@ def step1():
     reverse = config.getboolean('step1', 'reverse')
     num_rays = config.getint('step1', 'num_rays')
     grid = config.getboolean('step1', 'grid')
+    inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
 
     load(geom)
 
@@ -141,7 +144,7 @@ def step1():
     irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params_filename, tally_num,
                       num_rays=num_rays, grid=grid, reverse=reverse,
                       flux_tag=flux_tag, decay_times=decay_times,
-                      sub_voxel=sub_voxel)
+                      sub_voxel=sub_voxel, inventory_code=inventory_code)
 
     # create a blank mesh for step 2:
     ves = list(flux_mesh.iter_ve())
