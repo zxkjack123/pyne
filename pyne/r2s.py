@@ -6,6 +6,7 @@ from pyne.mesh import Mesh, NativeMeshTag
 from pyne.mcnp import Meshtal
 from pyne.alara import mesh_to_fluxin, record_to_geom, photon_source_to_hdf5, \
     photon_source_hdf5_to_mesh, responses_output_zone
+from pyne.fispact import mesh_to_fispact_fluxin, write_fispact_input
 
 QA_warn(__name__)
 
@@ -78,7 +79,7 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
                       alara_inp="alara_inp", alara_matlib="alara_matlib",
                       output_mesh="r2s_step1.h5m", output_material=False,
                       decay_times=None, sub_voxel=False, responses=None,
-                      wdr_file=None):
+                      wdr_file=None, inventory_code='ALARA'):
     """This function is used to setup the irradiation inputs after the first
     R2S transport step.
 
@@ -133,6 +134,8 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
         The list of requested responses.
     wdr_file : str
         Path to the wdr file.
+    inventory_code : str
+        The inventory calculation code. Supported codes: 'ALARA' and 'FISPACT-II'
     """
 
     m = resolve_mesh(flux_mesh, tally_num, flux_tag, output_material)
@@ -140,31 +143,40 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
     if output_material:
         m.cell_fracs_to_mats(cell_fracs, cell_mats)
 
-    mesh_to_fluxin(m, flux_tag, fluxin, reverse,
-                   sub_voxel, cell_fracs, cell_mats)
-    record_to_geom(m, cell_fracs, cell_mats, alara_inp, alara_matlib,
-                   sub_voxel=sub_voxel)
+    if inventory_code == 'ALARA':
+        mesh_to_fluxin(m, flux_tag, fluxin, reverse,
+                       sub_voxel, cell_fracs, cell_mats)
+        record_to_geom(m, cell_fracs, cell_mats, alara_inp, alara_matlib,
+                       sub_voxel=sub_voxel)
 
-    # write decay times into alara_inp
-    if decay_times is None:
-        decay_times = ['1 s']
-    decay_str = 'cooling\n'
-    for dc in decay_times:
-        decay_str = ''.join([decay_str, '    ', dc, '\n'])
-    decay_str = ''.join([decay_str, 'end\n'])
-    with open(alara_inp, 'a') as f:
-        f.write(decay_str)
-
-    if isfile(alara_params):
-        with open(alara_params, 'r') as f:
-            alara_params = f.read()
-
-    with open(alara_inp, 'a') as f:
-        f.write("\n" + alara_params)
-
-    # append responses output zone
-    with open(alara_inp, 'a') as f:
-        f.write(responses_output_zone(responses, wdr_file, alara_params))
+        # write decay times into alara_inp
+        if decay_times is None:
+            decay_times = ['1 s']
+        decay_str = 'cooling\n'
+        for dc in decay_times:
+            decay_str = ''.join([decay_str, '    ', dc, '\n'])
+        decay_str = ''.join([decay_str, 'end\n'])
+        with open(alara_inp, 'a') as f:
+            f.write(decay_str)
+    
+        if isfile(alara_params):
+            with open(alara_params, 'r') as f:
+                alara_params = f.read()
+    
+        with open(alara_inp, 'a') as f:
+            f.write("\n" + alara_params)
+    
+        # append responses output zone
+        with open(alara_inp, 'a') as f:
+            f.write(responses_output_zone(responses, wdr_file, alara_params))
+    elif inventory_code == 'FISPACT-II':
+        # write fluxes, sub-voxel is currently not supported
+        mesh_to_fispact_fluxin(m, flux_tag, fluxin_dir=".", reverse=reverse,
+                               sub_voxel=False, cell_fracs=cell_fracs,
+                               cell_mats=cell_mats)
+        
+        write_fispact_input(m, cell_fracs=cell_fracs, cell_mats=cell_mats,
+                            target_dir=".")
 
     m.write_hdf5(output_mesh)
 
