@@ -590,7 +590,10 @@ def write_fispact_input_single_ve(filename, material, total_flux, decay_times):
         id.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
     
     # irradiate and cooling times
-    id.addIrradiation(3.5*86400, 1.0e10*total_flux)
+    id.addIrradiation(1*365.25*86400, 4.4313e18*total_flux) # 1y 200MW
+    id.addIrradiation(2*365.25*86400, 1.1078e19*total_flux) # 2y 500MW
+    id.addIrradiation(5*365.25*86400, 2.2156e19*total_flux) # 5y 1000MW
+    id.addIrradiation(2*365.25*86400, 3.3235e19*total_flux) # 2y 1500MW
     cooling_times = calc_cooling_times(decay_times)
     for i, ct in enumerate(cooling_times):
         id.addCooling(ct)
