@@ -53,6 +53,8 @@ num_rays: 10
 # In this case <num_rays> must be a perfect square. If false, rays are fired
 # down mesh rows in random intervals.
 grid: False
+# Direcoty for fispact input and output files.
+fispact_files_dir: .
 
 [step2]
 # List of decays times, seperated by commas. These strings much match exactly
@@ -117,6 +119,13 @@ def step1():
 
     structured = config.getboolean('general', 'structured')
     sub_voxel = config.getboolean('general', 'sub_voxel')
+    inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
+    if inventory_code == 'FISPACT-II':
+        try:
+            import pypact as pp
+        except ImportError:
+            raise ImportError("The pypact is required when FISPACT-II is used for R2S")
+
     meshtal = config.get('step1', 'meshtal')
     tally_num = config.getint('step1', 'tally_num')
     flux_tag = config.get('step1', 'flux_tag')
@@ -125,7 +134,7 @@ def step1():
     reverse = config.getboolean('step1', 'reverse')
     num_rays = config.getint('step1', 'num_rays')
     grid = config.getboolean('step1', 'grid')
-    inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
+    fispact_files_dir = config.get('step1', 'fispact_files_dir', fallback='.')
 
     load(geom)
 
@@ -144,7 +153,8 @@ def step1():
     irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params_filename, tally_num,
                       num_rays=num_rays, grid=grid, reverse=reverse,
                       flux_tag=flux_tag, decay_times=decay_times,
-                      sub_voxel=sub_voxel, inventory_code=inventory_code)
+                      sub_voxel=sub_voxel, inventory_code=inventory_code,
+                      fispact_files_dir=fispact_files_dir)
 
     # create a blank mesh for step 2:
     ves = list(flux_mesh.iter_ve())
@@ -166,24 +176,39 @@ def step2():
     config.read(config_filename)
     structured = config.getboolean('general', 'structured')
     sub_voxel = config.getboolean('general', 'sub_voxel')
+    inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
+    fispact_files_dir = config.get('step1', 'fispact_files_dir', fallback='.')
     decay_times = config.get('step2', 'decay_times').split(',')
     output = config.get('step2', 'output')
     tot_phtn_src_intensities = config.get('step2', 'tot_phtn_src_intensities')
     tag_name = "source_density"
 
-    if sub_voxel:
+    if sub_voxel or inventory_code == 'FISPACT-II':
         geom = config.get('step1', 'geom')
         load(geom)
         cell_mats = cell_materials(geom)
     else:
         cell_mats = None
+
     h5_file = 'phtn_src.h5'
-    if not isfile(h5_file):
-        photon_source_to_hdf5(filename='phtn_src', nucs='total')
-    intensities = "Total photon source intensities (p/s)\n"
-    e_bounds = phtn_src_energy_bounds("alara_inp")
-    for i in range(len(e_bounds)):
-        e_bounds[i] /= 1.0e6 # convert unit from eV to MeV
+    if inventory_code == 'ALARA':
+        if not isfile(h5_file):
+            photon_source_to_hdf5(filename='phtn_src', nucs='total')
+        intensities = "Total photon source intensities (p/s)\n"
+        e_bounds = phtn_src_energy_bounds("alara_inp")
+        for i in range(len(e_bounds)):
+            e_bounds[i] /= 1.0e6 # convert unit from eV to MeV
+
+    if inventory_code == 'FISPACT-II':
+        from pyne import fispact
+        mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')
+        if not isfile(h5_file):
+            fispact.fispact_photon_source_to_hdf5(mesh, fispact_files_dir,
+                                      nucs='TOTAL', chunkshape=(10000,),
+                                      cell_mats=cell_mats)
+        e_bounds = fispact.fispact_phtn_src_energy_bounds(mesh,
+            fispact_files_dir, cell_mats)
+
     for i, dt in enumerate(decay_times):
         print('Writing source for decay time: {0} to mesh'.format(dt))
         mesh = Mesh(structured=structured, mesh='blank_mesh.h5m')

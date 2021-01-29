@@ -15,6 +15,9 @@ import numpy as np
 from pyne.mesh import Mesh, HAVE_PYMOAB
 from pyne.material import Material, from_atom_frac, MultiMaterial
 from pyne.nucname import name
+from pyne import alara
+import tables as tb
+
 
 try:
     basestring
@@ -440,8 +443,9 @@ def read_parameter(data, sub):
 ################################
 # functions using pypact module
 ################################
-def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir=".", reverse=False,
-                           sub_voxel=False, cell_fracs=None, cell_mats=None):
+def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fispact_files_dir=".",
+                           reverse=False, sub_voxel=False, cell_fracs=None,
+                           cell_mats=None):
     """This function creates FISPACT-II flux files from fluxes tagged on a PyNE
     Mesh object. Fluxes are printed in the order of the flux_mesh.__iter__().
 
@@ -452,7 +456,7 @@ def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir=".", reverse=False,
     flux_tag : string
         The name of the tag of the flux mesh. Flux values for different energy
         groups are assumed to be represented as vector tags.
-    fluxin_dir : string
+    fispact_files_dir : string
         The directory of the FISPACT-II flux files.
     reverse : bool
         If true, fluxes will be printed in the reverse order as they appear in
@@ -505,7 +509,7 @@ def mesh_to_fispact_fluxin(flux_mesh, flux_tag, fluxin_dir=".", reverse=False,
             output = u""
             # print flux data to file
             output = _output_flux(ve, tag_flux, output, start, stop, direction)
-            filename = os.path.join(fluxin_dir, ''.join(["ve", str(i), ".flx"]))
+            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i), ".flx"]))
             with open(filename, "w") as f:
                 f.write(output)
     else:
@@ -544,8 +548,11 @@ def _output_flux(ve, tag_flux, output, start, stop, direction):
     return output
 
 
-def write_fispact_input_single_ve(filename, material):
+def write_fispact_input_single_ve(filename, material, decay_times):
     """
+
+    decay_times : list of strings
+        Decay times.
     """
     id = pp.InputData(name=filename)
     
@@ -583,11 +590,14 @@ def write_fispact_input_single_ve(filename, material):
     
     # irradiate and cooling times
     id.addIrradiation(300.0, 1.1e15)
-    id.addCooling(10.0)
-    id.addCooling(100.0)
-    id.addCooling(1000.0)
-    id.addCooling(10000.0)
-    id.addCooling(100000.0)
+    cooling_times = calc_cooling_times(decay_times)
+    for i, ct in enumerate(cooling_times):
+        id.addCooling(ct)
+    #id.addCooling(10.0)
+    #id.addCooling(100.0)
+    #id.addCooling(1000.0)
+    #id.addCooling(10000.0)
+    #id.addCooling(100000.0)
     
     # validate data
     id.validate()
@@ -597,7 +607,8 @@ def write_fispact_input_single_ve(filename, material):
     # write to file
     pp.to_file(id, '{}.i'.format(id.name))
 
-def write_fispact_input(mesh, cell_fracs, cell_mats, target_dir="."):
+def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
+                        decay_times=None):
     """This function preforms the same task as alara.mesh_to_geom, except the
     geometry is on the basis of the stuctured array output of
     dagmc.discretize_geom rather than a PyNE material object with materials.
@@ -625,12 +636,14 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, target_dir="."):
     cell_mats : dict
         Maps geometry cell numbers to PyNE Material objects. Each PyNE material
         object must have 'name' specified in Material.metadata.
-    target_dir : str
-        The target directory for the fispact input files.
+    fispact_files_dir : str
+        The directory for the fispact input files.
+    decay_times : list of strings
+        Decay times.
     """
     if mesh.structured:
         for i, mat, ve in mesh:
-            filename = os.path.join(target_dir, ''.join(["ve", str(i)]))
+            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i)]))
             mats_map = {}
             for svid in range(len(mesh.cell_fracs[0])):
                 if mesh.cell_number[i][svid] > 0:
@@ -639,8 +652,112 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, target_dir="."):
             mat = mats.mix_by_volume()
             mat = mat.expand_elements()
             if mat.density > 0: # mat could be void, but fispact do not write void material
-                write_fispact_input_single_ve(filename, mat)
+                write_fispact_input_single_ve(filename, mat, decay_times)
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
 
+
+def fispact_photon_source_to_hdf5(mesh, fispact_files_dir='.', nucs='TOTAL',
+                                  chunkshape=(10000,), cell_mats=None):
+    """Converts a plaintext fispact output files to an HDF5 version for
+    quick later use.
+
+    This function produces a single HDF5 file named <filename>.h5 containing the
+    table headings:
+
+        idx : int
+            The volume element index assuming the volume elements appear in xyz
+            order (z changing fastest) within the photon source file in the case of
+            a structured mesh or mesh.mesh_iterate() order for an unstructured mesh.
+        nuc : str
+            The nuclide name as it appears in the photon source file.
+        time : str
+            The decay time as it appears in the photon source file.
+        phtn_src : 1D array of floats
+            Contains the photon source density for each energy group.
+
+    Parameters
+    ----------
+    mesh : PyNE Mesh
+       The object containing the PyMOAB instance.
+    nucs : str
+        Nuclides need to write into h5 file. For example:
+            - 'all': default value. Write the information of all nuclides to h5.
+            - 'total': used for r2s. Only write TOTAL value to h5.
+    chunkshape : tuple of int
+        A 1D tuple of the HDF5 chunkshape.
+
+    """
+    phtn_dtype = alara._make_response_dtype('phtn_src', data_length=24)
+    filters = tb.Filters(complevel=1, complib='zlib')
+
+    # set the default output h5_filename
+    h5f = tb.open_file('phtn_src.h5', 'w', filters=filters)
+    tab = h5f.create_table('/', 'data', phtn_dtype, chunkshape=chunkshape)
+
+    chunksize = chunkshape[0]
+    rows = np.empty(chunksize, dtype=phtn_dtype)
+    row_count = 0
+    for i, mat, ve in mesh:
+        mats_map = {}
+        for svid in range(len(mesh.cell_fracs[0])):
+            if mesh.cell_number[i][svid] > 0:
+                mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
+        mats = MultiMaterial(mats_map)
+        mat = mats.mix_by_volume()
+        if mat.density > 0: # mat could be void, but fispact do not write void material
+            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i), ".out"]))
+            with pp.Reader(filename) as output:
+                for t in output.inventory_data:
+                    if t.cooling_time > 0:
+                        row_count += 1
+                        j = (row_count-1) % chunksize
+                        rows[j] = (i, 'TOTAL', t.cooling_time,
+                                   t.gamma_spectrum.volumetric_rates)
+                    if (row_count > 0) and (row_count % chunksize == 0):
+                       tab.append(rows)
+                       rows = np.empty(chunksize, dtype=phtn_dtype)
+                       row_count = 0
+
+    if row_count % chunksize != 0:
+        tab.append(rows[:j+1])
+
+    h5f.close()
+
+
+def fispact_phtn_src_energy_bounds(mesh, fispact_files_dir, cell_mats):
+    """
+    """
+    for i, mat, ve in mesh:
+        mats_map = {}
+        for svid in range(len(mesh.cell_fracs[0])):
+            if mesh.cell_number[i][svid] > 0:
+                mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
+        mats = MultiMaterial(mats_map)
+        mat = mats.mix_by_volume()
+        if mat.density > 0: # mat could be void, but fispact do not write void material
+            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i), ".out"]))
+            with pp.Reader(filename) as output:
+                for t in output.inventory_data:
+                    e_bounds = np.array(t.gamma_spectrum.boundaries)
+                    return
+    raise ValueError("fispact photon source e_bounds not found")
+
+                 
+def calc_cooling_times(decay_times):
+    """
+    Calculate the cooling times in [s].
+
+    Returns:
+    --------
+    cooling_times : list of float
+        List of cooling times in [s].
+    """
+    cooling_times = np.zeros(len(decay_times))
+    for i, dt in enumerate(decay_times):
+        if i == 0:
+            cooling_times[i] = alara._convert_unit_to_s(dt)
+        else:
+            cooling_times[i] = alara._convert_unit_to_s(dt) - cooling_times[i-1]
+    return cooling_times
 

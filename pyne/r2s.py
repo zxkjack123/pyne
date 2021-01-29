@@ -79,7 +79,8 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
                       alara_inp="alara_inp", alara_matlib="alara_matlib",
                       output_mesh="r2s_step1.h5m", output_material=False,
                       decay_times=None, sub_voxel=False, responses=None,
-                      wdr_file=None, inventory_code='ALARA'):
+                      wdr_file=None, inventory_code='ALARA',
+                      fispact_files_dir=None):
     """This function is used to setup the irradiation inputs after the first
     R2S transport step.
 
@@ -136,6 +137,8 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
         Path to the wdr file.
     inventory_code : str
         The inventory calculation code. Supported codes: 'ALARA' and 'FISPACT-II'
+    fispact_files_dir : str
+        The directory for the fispact input, flux and output files.
     """
 
     m = resolve_mesh(flux_mesh, tally_num, flux_tag, output_material)
@@ -171,12 +174,13 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
             f.write(responses_output_zone(responses, wdr_file, alara_params))
     elif inventory_code == 'FISPACT-II':
         # write fluxes, sub-voxel is currently not supported
-        mesh_to_fispact_fluxin(m, flux_tag, fluxin_dir=".", reverse=reverse,
-                               sub_voxel=False, cell_fracs=cell_fracs,
-                               cell_mats=cell_mats)
+        mesh_to_fispact_fluxin(m, flux_tag, fispact_files_dir=fispact_files_dir,
+                               reverse=reverse, sub_voxel=False,
+                               cell_fracs=cell_fracs, cell_mats=cell_mats)
         
         write_fispact_input(m, cell_fracs=cell_fracs, cell_mats=cell_mats,
-                            target_dir=".")
+                            fispact_files_dir=fispact_files_dir,
+                            decay_times=decay_times)
 
     m.write_hdf5(output_mesh)
 

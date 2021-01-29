@@ -154,7 +154,7 @@ def test_write_fluxin_single():
 
     # test forward writting
     fispact.mesh_to_fispact_fluxin(flux_mesh, flux_tag="flux",
-                                   fluxin_dir=output_dir, reverse=False)
+                                   fispact_files_dir=output_dir, reverse=False)
 
     # test flux file of the first ve
     output = os.path.join(output_dir, ''.join(["ve0.flx"]))
@@ -228,7 +228,8 @@ def test_write_fispact_input_single_ve():
     mat = Material(h2o, density=1.0)
     output_dir = os.path.join(thisdir, "files_test_fispact")
     filename = os.path.join(output_dir, "test")
-    fispact.write_fispact_input_single_ve(filename=filename, material=mat)
+    fispact.write_fispact_input_single_ve(filename=filename, material=mat,
+        decay_times=['1 s'])
     os.remove(filename+".i")
 
 def test_write_fispact_input():
@@ -253,6 +254,7 @@ def test_write_fispact_input():
                  13: Material({}, density=0.0, metadata={'name': 'void'})}
 
     # write fispact input files
-    target_dir = os.path.join(thisdir, "files_test_fispact")
-    fispact.write_fispact_input(flux_mesh, cell_fracs, cell_mats, target_dir=target_dir)
+    fispact_files_dir = os.path.join(thisdir, "files_test_fispact")
+    fispact.write_fispact_input(flux_mesh, cell_fracs, cell_mats,
+        fispact_files_dir=fispact_files_dir, decay_times=['1 s'])
 
