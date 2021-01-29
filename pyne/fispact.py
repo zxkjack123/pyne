@@ -739,8 +739,9 @@ def fispact_phtn_src_energy_bounds(mesh, fispact_files_dir, cell_mats):
             filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i), ".out"]))
             with pp.Reader(filename) as output:
                 for t in output.inventory_data:
-                    e_bounds = np.array(t.gamma_spectrum.boundaries)
-                    return
+                    if t.cooling_time > 0:
+                        e_bounds = np.array(t.gamma_spectrum.boundaries)
+                        return e_bounds
     raise ValueError("fispact photon source e_bounds not found")
 
                  
@@ -754,10 +755,9 @@ def calc_cooling_times(decay_times):
         List of cooling times in [s].
     """
     cooling_times = np.zeros(len(decay_times))
+    current_time = 0.0
     for i, dt in enumerate(decay_times):
-        if i == 0:
-            cooling_times[i] = alara._convert_unit_to_s(dt)
-        else:
-            cooling_times[i] = alara._convert_unit_to_s(dt) - cooling_times[i-1]
+        cooling_times[i] = alara._convert_unit_to_s(dt) - current_time
+        current_time += cooling_times[i]
     return cooling_times
 
