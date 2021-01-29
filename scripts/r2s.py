@@ -4,7 +4,7 @@ try:
     import ConfigParser
 except ImportError:
     import configparser as ConfigParser
-
+import os
 from os.path import isfile
 
 from pyne.mesh import Mesh, NativeMeshTag
@@ -28,6 +28,8 @@ structured: True
 sub_voxel: False
 # Inventory code to use. ALARA or FISPACT-II
 inventory_code: ALARA
+# Direcoty for fispact input and output files.
+fispact_files_dir: .
 
 [step1]
 # Path to MCNP MESHTAL file containing neutron fluxes or a DAG-MCNP5
@@ -53,8 +55,6 @@ num_rays: 10
 # In this case <num_rays> must be a perfect square. If false, rays are fired
 # down mesh rows in random intervals.
 grid: False
-# Direcoty for fispact input and output files.
-fispact_files_dir: .
 
 [step2]
 # List of decays times, seperated by commas. These strings much match exactly
@@ -123,6 +123,9 @@ def step1():
     if inventory_code == 'FISPACT-II':
         try:
             import pypact as pp
+            fispact_files_dir = config.get('general', 'fispact_files_dir', fallback='.')
+            if not os.path.isdir(fispact_files_dir):
+                os.mkdir(fispact_files_dir)
         except ImportError:
             raise ImportError("The pypact is required when FISPACT-II is used for R2S")
 
@@ -134,7 +137,6 @@ def step1():
     reverse = config.getboolean('step1', 'reverse')
     num_rays = config.getint('step1', 'num_rays')
     grid = config.getboolean('step1', 'grid')
-    fispact_files_dir = config.get('step1', 'fispact_files_dir', fallback='.')
 
     load(geom)
 
@@ -177,7 +179,7 @@ def step2():
     structured = config.getboolean('general', 'structured')
     sub_voxel = config.getboolean('general', 'sub_voxel')
     inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
-    fispact_files_dir = config.get('step1', 'fispact_files_dir', fallback='.')
+    fispact_files_dir = config.get('general', 'fispact_files_dir', fallback='.')
     decay_times = config.get('step2', 'decay_times').split(',')
     output = config.get('step2', 'output')
     tot_phtn_src_intensities = config.get('step2', 'tot_phtn_src_intensities')
@@ -191,10 +193,10 @@ def step2():
         cell_mats = None
 
     h5_file = 'phtn_src.h5'
+    intensities = "Total photon source intensities (p/s)\n"
     if inventory_code == 'ALARA':
         if not isfile(h5_file):
             photon_source_to_hdf5(filename='phtn_src', nucs='total')
-        intensities = "Total photon source intensities (p/s)\n"
         e_bounds = phtn_src_energy_bounds("alara_inp")
         for i in range(len(e_bounds)):
             e_bounds[i] /= 1.0e6 # convert unit from eV to MeV

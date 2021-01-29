@@ -80,7 +80,7 @@ def irradiation_setup(flux_mesh, cell_mats, cell_fracs, alara_params,
                       output_mesh="r2s_step1.h5m", output_material=False,
                       decay_times=None, sub_voxel=False, responses=None,
                       wdr_file=None, inventory_code='ALARA',
-                      fispact_files_dir=None):
+                      fispact_files_dir="."):
     """This function is used to setup the irradiation inputs after the first
     R2S transport step.
 
