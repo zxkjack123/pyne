@@ -1080,7 +1080,10 @@ def _convert_unit_to_s(dt):
     # get num and unit
     if dt == u'shutdown':
         num, unit = u'0.0', u's'
-    else:
+    tokens = dt.split()
+    if len(tokens) == 1: # no unit provided
+       return float(tokens[0]) 
+    else: # unit provided
         num, unit = dt.split()
     return to_sec(float(num), unit)
 
