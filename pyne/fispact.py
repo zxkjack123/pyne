@@ -548,7 +548,7 @@ def _output_flux(ve, tag_flux, output, start, stop, direction):
     return output
 
 
-def write_fispact_input_single_ve(filename, material, decay_times):
+def write_fispact_input_single_ve(filename, material, total_flux, decay_times):
     """
 
     decay_times : list of strings
@@ -589,7 +589,7 @@ def write_fispact_input_single_ve(filename, material, decay_times):
         id.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
     
     # irradiate and cooling times
-    id.addIrradiation(300.0, 1.1e15)
+    id.addIrradiation(3.5*86400, 1.0e10*total_flux)
     cooling_times = calc_cooling_times(decay_times)
     for i, ct in enumerate(cooling_times):
         id.addCooling(ct)
@@ -652,7 +652,7 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
             mat = mats.mix_by_volume()
             mat = mat.expand_elements()
             if mat.density > 0: # mat could be void, but fispact do not write void material
-                write_fispact_input_single_ve(filename, mat, decay_times)
+                write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][i], decay_times)
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
 
