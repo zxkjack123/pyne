@@ -120,10 +120,10 @@ def step1():
     structured = config.getboolean('general', 'structured')
     sub_voxel = config.getboolean('general', 'sub_voxel')
     inventory_code = config.get('general', 'inventory_code', fallback='ALARA')
+    fispact_files_dir = config.get('general', 'fispact_files_dir', fallback='.')
     if inventory_code == 'FISPACT-II':
         try:
             import pypact as pp
-            fispact_files_dir = config.get('general', 'fispact_files_dir', fallback='.')
             if not os.path.isdir(fispact_files_dir):
                 os.mkdir(fispact_files_dir)
         except ImportError:
