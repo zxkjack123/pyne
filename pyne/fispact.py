@@ -661,12 +661,15 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
             mesh_ve_to_fispactinput(mesh, i, cell_mats, fispact_files_dir, decay_times)
         p.close()
         p.join()
+        print("Fispact input files writing finished")
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
 
-def mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times):
+def mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times, print_step=1000):
     """
     """
+    if (idx > 0) and (idx % print_step == 0):
+        print("Dealing with volume element idx: {}".format(idx))
     filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx)]))
     mat = calc_mix_mat(mesh, idx, cell_mats)
     if mat.density > 0: # mat could be void, but fispact do not write void material
