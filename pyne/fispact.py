@@ -17,6 +17,7 @@ from pyne.material import Material, from_atom_frac, MultiMaterial
 from pyne.nucname import name
 from pyne import alara
 import tables as tb
+import multiprocessing
 
 
 try:
@@ -642,19 +643,46 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
         Decay times.
     """
     if mesh.structured:
+        p = multiprocessing.Pool()
         for i, mat, ve in mesh:
-            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i)]))
-            mats_map = {}
-            for svid in range(len(mesh.cell_fracs[0])):
-                if mesh.cell_number[i][svid] > 0:
-                    mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
-            mats = MultiMaterial(mats_map)
-            mat = mats.mix_by_volume()
-            mat = mat.expand_elements()
-            if mat.density > 0: # mat could be void, but fispact do not write void material
-                write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][i], decay_times)
+            #filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i)]))
+            #mats_map = {}
+            #for svid in range(len(mesh.cell_fracs[0])):
+            #    if mesh.cell_number[i][svid] > 0:
+            #        mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
+            #mats = MultiMaterial(mats_map)
+            #mat = mats.mix_by_volume()
+            #mat = mat.expand_elements()
+            #mat = calc_mix_mat(mesh, i, cell_mats)
+            #if mat.density > 0: # mat could be void, but fispact do not write void material
+            #    p.apply_async(write_fispact_input_single_ve, args=(filename,
+            #        mat, mesh.n_flux_total[:][i], decay_times))
+                #write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][i], decay_times)
+            mesh_ve_to_fispactinput(mesh, i, cell_mats, fispact_files_dir, decay_times)
+        p.close()
+        p.join()
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
+
+def mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times):
+    """
+    """
+    filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx)]))
+    mat = calc_mix_mat(mesh, idx, cell_mats)
+    if mat.density > 0: # mat could be void, but fispact do not write void material
+        write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][idx], decay_times)
+
+def calc_mix_mat(mesh, idx, cell_mats):
+    """
+    """
+    mats_map = {}
+    for svid in range(len(mesh.cell_fracs[0])):
+        if mesh.cell_number[idx][svid] > 0:
+            mats_map[cell_mats[mesh.cell_number[idx][svid]]] = mesh.cell_fracs[idx][svid]
+    mats = MultiMaterial(mats_map)
+    mat = mats.mix_by_volume()
+    mat = mat.expand_elements()
+    return mat
 
 
 def fispact_photon_source_to_hdf5(mesh, fispact_files_dir='.', nucs='TOTAL',

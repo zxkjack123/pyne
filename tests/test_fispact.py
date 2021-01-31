@@ -229,7 +229,7 @@ def test_write_fispact_input_single_ve():
     output_dir = os.path.join(thisdir, "files_test_fispact")
     filename = os.path.join(output_dir, "test")
     fispact.write_fispact_input_single_ve(filename=filename, material=mat,
-        decay_times=['1 s'])
+        decay_times=['1 s'], total_flux=1e-2)
     os.remove(filename+".i")
 
 def test_write_fispact_input():
@@ -241,6 +241,7 @@ def test_write_fispact_input():
                  [15, 16, 17, 18, 19, 20, 21],
                  [22, 23, 24, 25, 26, 27, 28]]
     flux_mesh.tag("flux", flux_data, 'nat_mesh', size=7, dtype=float)
+    flux_mesh.tag("n_flux_total", np.sum(flux_data), 'nat_mesh', size=1, dtype=float)
 
     cell_fracs = np.zeros(6, dtype=[('idx', np.int64),
                                     ('cell', np.int64),
