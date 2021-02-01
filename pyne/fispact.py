@@ -17,8 +17,6 @@ from pyne.material import Material, from_atom_frac, MultiMaterial
 from pyne.nucname import name
 from pyne import alara
 import tables as tb
-import multiprocessing
-
 
 try:
     basestring
@@ -646,7 +644,6 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
         Decay times.
     """
     if mesh.structured:
-        p = multiprocessing.Pool()
         for i, mat, ve in mesh:
             #filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i)]))
             #mats_map = {}
@@ -662,8 +659,6 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
             #        mat, mesh.n_flux_total[:][i], decay_times))
                 #write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][i], decay_times)
             mesh_ve_to_fispactinput(mesh, i, cell_mats, fispact_files_dir, decay_times)
-        p.close()
-        p.join()
         print("Fispact input files writing finished")
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
