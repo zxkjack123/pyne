@@ -17,6 +17,7 @@ from pyne.material import Material, from_atom_frac, MultiMaterial
 from pyne.nucname import name
 from pyne import alara
 import tables as tb
+import sys
 
 try:
     basestring
@@ -547,67 +548,67 @@ def _output_flux(ve, tag_flux, start, stop, direction):
     return output
 
 
-def write_fispact_input_single_ve(filename, material, total_flux, decay_times):
-    """
-
-    decay_times : list of strings
-        Decay times.
-    """
-    inp_data = pp.InputData(name=filename)
-    
-    # control setup
-    inp_data.overwriteExisting()
-    inp_data.enableJSON()
-    inp_data.approxGammaSpectrum()
-    inp_data.readXSData(175)
-    inp_data.readDecayData()
-    inp_data.enableHalflifeInOutput()
-    inp_data.enableHazardsInOutput()
-    inp_data.setProjectile(pp.PROJECTILE_NEUTRON)
-    #inp_data.enableSystemMonitor()
-    #inp_data.readGammaGroup()
-    inp_data.enableInitialInventoryInOutput()
-    inp_data.setLogLevel(pp.LOG_SEVERITY_ERROR)
-    
-    # thresholds
-    #inp_data.setXSThreshold(1e-12)
-    inp_data.setAtomsThreshold(1e5)
-    
-    ## set target
-    #inp_data.setDensity(19.5)
-    #inp_data.setMass(1.0)
-    #inp_data.addElement('Ti', percentage=80.0)
-    #inp_data.addElement('Fe', percentage=14.8)
-    #inp_data.addElement('Cr', percentage=5.2)
-    inp_data.setDensity(material.density)
-    inp_data.setFuel()
-    atom_dens = material.to_atom_dens()
-    for nuc, comp in material.comp.items():
-        # add isotpoes in unit of atoms/kg
-        # control the digits to avoid data entries too long
-        inp_data.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
-    
-    # irradiate and cooling times
-    inp_data.addIrradiation(1*365.25*86400, 4.4313e18*total_flux) # 1y 200MW
-    inp_data.addIrradiation(2*365.25*86400, 1.1078e19*total_flux) # 2y 500MW
-    inp_data.addIrradiation(5*365.25*86400, 2.2156e19*total_flux) # 5y 1000MW
-    inp_data.addIrradiation(2*365.25*86400, 3.3235e19*total_flux) # 2y 1500MW
-    cooling_times = calc_cooling_times(decay_times)
-    for i, ct in enumerate(cooling_times):
-        inp_data.addCooling(ct)
-    #inp_data.addCooling(10.0)
-    #inp_data.addCooling(100.0)
-    #inp_data.addCooling(1000.0)
-    #inp_data.addCooling(10000.0)
-    #inp_data.addCooling(100000.0)
-    
-    # validate data
-    inp_data.validate()
-    
-    #print(pp.to_string(id))
-    
-    # write to file
-    pp.to_file(id, '{}.i'.format(inp_data.name))
+#def write_fispact_input_single_ve(filename, material, total_flux, decay_times):
+#    """
+#
+#    decay_times : list of strings
+#        Decay times.
+#    """
+#    inp_data = pp.InputData(name=filename)
+#    
+#    # control setup
+#    inp_data.overwriteExisting()
+#    inp_data.enableJSON()
+#    inp_data.approxGammaSpectrum()
+#    inp_data.readXSData(175)
+#    inp_data.readDecayData()
+#    inp_data.enableHalflifeInOutput()
+#    inp_data.enableHazardsInOutput()
+#    inp_data.setProjectile(pp.PROJECTILE_NEUTRON)
+#    #inp_data.enableSystemMonitor()
+#    #inp_data.readGammaGroup()
+#    inp_data.enableInitialInventoryInOutput()
+#    inp_data.setLogLevel(pp.LOG_SEVERITY_ERROR)
+#    
+#    # thresholds
+#    #inp_data.setXSThreshold(1e-12)
+#    inp_data.setAtomsThreshold(1e5)
+#    
+#    ## set target
+#    #inp_data.setDensity(19.5)
+#    #inp_data.setMass(1.0)
+#    #inp_data.addElement('Ti', percentage=80.0)
+#    #inp_data.addElement('Fe', percentage=14.8)
+#    #inp_data.addElement('Cr', percentage=5.2)
+#    inp_data.setDensity(material.density)
+#    inp_data.setFuel()
+#    atom_dens = material.to_atom_dens()
+#    for nuc, comp in material.comp.items():
+#        # add isotpoes in unit of atoms/kg
+#        # control the digits to avoid data entries too long
+#        inp_data.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
+#    
+#    # irradiate and cooling times
+#    inp_data.addIrradiation(1*365.25*86400, 4.4313e18*total_flux) # 1y 200MW
+#    inp_data.addIrradiation(2*365.25*86400, 1.1078e19*total_flux) # 2y 500MW
+#    inp_data.addIrradiation(5*365.25*86400, 2.2156e19*total_flux) # 5y 1000MW
+#    inp_data.addIrradiation(2*365.25*86400, 3.3235e19*total_flux) # 2y 1500MW
+#    cooling_times = calc_cooling_times(decay_times)
+#    for i, ct in enumerate(cooling_times):
+#        inp_data.addCooling(ct)
+#    #inp_data.addCooling(10.0)
+#    #inp_data.addCooling(100.0)
+#    #inp_data.addCooling(1000.0)
+#    #inp_data.addCooling(10000.0)
+#    #inp_data.addCooling(100000.0)
+#    
+#    # validate data
+#    inp_data.validate()
+#    
+#    #print(pp.to_string(id))
+#    
+#    # write to file
+#    pp.to_file(inp_data, '{}'.format(inp_data.name))
 
 
 def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
@@ -645,46 +646,100 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
         Decay times.
     """
     if mesh.structured:
-        for i, mat, ve in mesh:
-            #filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i)]))
-            #mats_map = {}
-            #for svid in range(len(mesh.cell_fracs[0])):
-            #    if mesh.cell_number[i][svid] > 0:
-            #        mats_map[cell_mats[mesh.cell_number[i][svid]]] = mesh.cell_fracs[i][svid]
-            #mats = MultiMaterial(mats_map)
-            #mat = mats.mix_by_volume()
-            #mat = mat.expand_elements()
-            #mat = calc_mix_mat(mesh, i, cell_mats)
-            #if mat.density > 0: # mat could be void, but fispact do not write void material
-            #    p.apply_async(write_fispact_input_single_ve, args=(filename,
-            #        mat, mesh.n_flux_total[:][i], decay_times))
+        cell_number = mesh.cell_number[:]
+        cell_fracs = mesh.cell_fracs[:]
+        print("size of cell_mats", sys.getsizeof(cell_mats))
+        for idx, mat, ve in mesh:
+            filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx), ".i"]))
+            mats_map = {}
+            for svid in range(len(cell_fracs[0])):
+                if cell_number[idx][svid] > 0:
+                    mats_map[cell_mats[cell_number[idx][svid]]] = cell_fracs[idx][svid]
+            mats = MultiMaterial(mats_map)
+            mat = mats.mix_by_volume()
+            mat = mat.expand_elements()
+            #mat = calc_mix_mat(idx, cell_number[idx], cell_fracs[idx], cell_mats)
+            if mat.density > 0: # mat could be void, but fispact do not write void material
                 #write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][i], decay_times)
-            mesh_ve_to_fispactinput(mesh, i, cell_mats, fispact_files_dir, decay_times)
+                #mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times)
+                #write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][idx], decay_times)
+                inp_data = pp.InputData(name=filename)
+                # control setup
+                inp_data.overwriteExisting()
+                inp_data.enableJSON()
+                inp_data.approxGammaSpectrum()
+                inp_data.readXSData(175)
+                inp_data.readDecayData()
+                inp_data.enableHalflifeInOutput()
+                inp_data.enableHazardsInOutput()
+                inp_data.setProjectile(pp.PROJECTILE_NEUTRON)
+                #inp_data.enableSystemMonitor()
+                #inp_data.readGammaGroup()
+                inp_data.enableInitialInventoryInOutput()
+                inp_data.setLogLevel(pp.LOG_SEVERITY_ERROR)
+                # thresholds
+                #inp_data.setXSThreshold(1e-12)
+                inp_data.setAtomsThreshold(1e5)
+                ## set target
+                #inp_data.setDensity(19.5)
+                #inp_data.setMass(1.0)
+                #inp_data.addElement('Ti', percentage=80.0)
+                #inp_data.addElement('Fe', percentage=14.8)
+                #inp_data.addElement('Cr', percentage=5.2)
+                inp_data.setDensity(mat.density)
+                inp_data.setFuel()
+                atom_dens = mat.to_atom_dens()
+                for nuc, comp in mat.comp.items():
+                    # add isotpoes in unit of atoms/kg
+                    # control the digits to avoid data entries too long
+                    inp_data.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/mat.density*1e3)))
+                # irradiate and cooling times
+                inp_data.addIrradiation(1*365.25*86400, 4.4313e18*mesh.n_flux_total[:][idx]) # 1y 200MW
+                inp_data.addIrradiation(2*365.25*86400, 1.1078e19*mesh.n_flux_total[:][idx]) # 2y 500MW
+                inp_data.addIrradiation(5*365.25*86400, 2.2156e19*mesh.n_flux_total[:][idx]) # 5y 1000MW
+                inp_data.addIrradiation(2*365.25*86400, 3.3235e19*mesh.n_flux_total[:][idx]) # 2y 1500MW
+                cooling_times = calc_cooling_times(decay_times)
+                for i, ct in enumerate(cooling_times):
+                    inp_data.addCooling(ct)
+                #inp_data.addCooling(10.0)
+                #inp_data.addCooling(100.0)
+                #inp_data.addCooling(1000.0)
+                #inp_data.addCooling(10000.0)
+                #inp_data.addCooling(100000.0)
+                # validate data
+                inp_data.validate()
+                #print(pp.to_string(id))
+                # write to file
+                pp.to_file(inp_data, '{}'.format(inp_data.name))
+                del inp_data
+            del mats_map, mats, mat
         print("Fispact input files writing finished")
     else:
         raise ValueError("unstructured mesh fispact input not supported!")
 
-def mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times, print_step=1000):
-    """
-    """
-    if (idx > 0) and (idx % print_step == 0):
-        print("Dealing with volume element idx: {}".format(idx))
-    filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx)]))
-    mat = calc_mix_mat(mesh, idx, cell_mats)
-    if mat.density > 0: # mat could be void, but fispact do not write void material
-        write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][idx], decay_times)
+#def mesh_ve_to_fispactinput(mesh, idx, cell_mats, fispact_files_dir, decay_times, print_step=1000):
+#    """
+#    """
+#    if (idx > 0) and (idx % print_step == 0):
+#        print("Dealing with volume element idx: {}".format(idx))
+#    filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx)]))
+#    mat = calc_mix_mat(idx, cell_number, cell_fracs, cell_mats)
+#    if mat.density > 0: # mat could be void, but fispact do not write void material
+#        write_fispact_input_single_ve(filename, mat, mesh.n_flux_total[:][idx], decay_times)
 
-def calc_mix_mat(mesh, idx, cell_mats):
-    """
-    """
-    mats_map = {}
-    for svid in range(len(mesh.cell_fracs[0])):
-        if mesh.cell_number[idx][svid] > 0:
-            mats_map[cell_mats[mesh.cell_number[idx][svid]]] = mesh.cell_fracs[idx][svid]
-    mats = MultiMaterial(mats_map)
-    mat = mats.mix_by_volume()
-    mat = mat.expand_elements()
-    return mat
+#def calc_mix_mat(idx, cell_number, cell_fracs, cell_mats):
+#    """
+#    """
+#    mats_map = {}
+#    for svid in range(len(cell_fracs)):
+#        if cell_number[svid] > 0:
+#            mats_map[cell_mats[cell_number[svid]]] = cell_fracs[svid]
+#    mats = MultiMaterial(mats_map)
+#    mat = mats.mix_by_volume()
+#    mat = mat.expand_elements()
+#    del mats_map
+#    del mats
+#    return mat
 
 
 def fispact_photon_source_to_hdf5(mesh, fispact_files_dir='.', nucs='TOTAL',
