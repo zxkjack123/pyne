@@ -230,7 +230,7 @@ def test_write_fispact_input_single_ve():
     filename = os.path.join(output_dir, "test")
     fispact.write_fispact_input_single_ve(filename=filename, material=mat,
         decay_times=['1 s'], total_flux=1e-2)
-    os.remove(filename+".i")
+    os.remove(filename)
 
 def test_write_fispact_input():
     """This function tests the write_fispact_input function for test.
