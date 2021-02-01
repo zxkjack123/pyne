@@ -612,7 +612,7 @@ def _output_flux(ve, tag_flux, start, stop, direction):
 
 
 def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
-                        decay_times=None):
+                        decay_times=None, print_step=1000):
     """This function preforms the same task as alara.mesh_to_geom, except the
     geometry is on the basis of the stuctured array output of
     dagmc.discretize_geom rather than a PyNE material object with materials.
@@ -650,6 +650,8 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
         cell_fracs = mesh.cell_fracs[:]
         print("size of cell_mats", sys.getsizeof(cell_mats))
         for idx, mat, ve in mesh:
+            if (idx > 0) and (idx % print_step == 0):
+                print("Dealing with volume element idx: {}".format(idx))
             filename = os.path.join(fispact_files_dir, ''.join(["ve", str(idx), ".i"]))
             mats_map = {}
             for svid in range(len(cell_fracs[0])):
