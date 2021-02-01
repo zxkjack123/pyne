@@ -553,61 +553,62 @@ def write_fispact_input_single_ve(filename, material, total_flux, decay_times):
     decay_times : list of strings
         Decay times.
     """
-    id = pp.InputData(name=filename)
+    inp_data = pp.InputData(name=filename)
     
     # control setup
-    id.overwriteExisting()
-    id.enableJSON()
-    id.approxGammaSpectrum()
-    id.readXSData(175)
-    id.readDecayData()
-    id.enableHalflifeInOutput()
-    id.enableHazardsInOutput()
-    id.setProjectile(pp.PROJECTILE_NEUTRON)
-    #id.enableSystemMonitor()
-    #id.readGammaGroup()
-    id.enableInitialInventoryInOutput()
-    id.setLogLevel(pp.LOG_SEVERITY_ERROR)
+    inp_data.overwriteExisting()
+    inp_data.enableJSON()
+    inp_data.approxGammaSpectrum()
+    inp_data.readXSData(175)
+    inp_data.readDecayData()
+    inp_data.enableHalflifeInOutput()
+    inp_data.enableHazardsInOutput()
+    inp_data.setProjectile(pp.PROJECTILE_NEUTRON)
+    #inp_data.enableSystemMonitor()
+    #inp_data.readGammaGroup()
+    inp_data.enableInitialInventoryInOutput()
+    inp_data.setLogLevel(pp.LOG_SEVERITY_ERROR)
     
     # thresholds
-    #id.setXSThreshold(1e-12)
-    id.setAtomsThreshold(1e5)
+    #inp_data.setXSThreshold(1e-12)
+    inp_data.setAtomsThreshold(1e5)
     
     ## set target
-    #id.setDensity(19.5)
-    #id.setMass(1.0)
-    #id.addElement('Ti', percentage=80.0)
-    #id.addElement('Fe', percentage=14.8)
-    #id.addElement('Cr', percentage=5.2)
-    id.setDensity(material.density)
-    id.setFuel()
+    #inp_data.setDensity(19.5)
+    #inp_data.setMass(1.0)
+    #inp_data.addElement('Ti', percentage=80.0)
+    #inp_data.addElement('Fe', percentage=14.8)
+    #inp_data.addElement('Cr', percentage=5.2)
+    inp_data.setDensity(material.density)
+    inp_data.setFuel()
     atom_dens = material.to_atom_dens()
     for nuc, comp in material.comp.items():
         # add isotpoes in unit of atoms/kg
         # control the digits to avoid data entries too long
-        id.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
+        inp_data.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/material.density*1e3)))
     
     # irradiate and cooling times
-    id.addIrradiation(1*365.25*86400, 4.4313e18*total_flux) # 1y 200MW
-    id.addIrradiation(2*365.25*86400, 1.1078e19*total_flux) # 2y 500MW
-    id.addIrradiation(5*365.25*86400, 2.2156e19*total_flux) # 5y 1000MW
-    id.addIrradiation(2*365.25*86400, 3.3235e19*total_flux) # 2y 1500MW
+    inp_data.addIrradiation(1*365.25*86400, 4.4313e18*total_flux) # 1y 200MW
+    inp_data.addIrradiation(2*365.25*86400, 1.1078e19*total_flux) # 2y 500MW
+    inp_data.addIrradiation(5*365.25*86400, 2.2156e19*total_flux) # 5y 1000MW
+    inp_data.addIrradiation(2*365.25*86400, 3.3235e19*total_flux) # 2y 1500MW
     cooling_times = calc_cooling_times(decay_times)
     for i, ct in enumerate(cooling_times):
-        id.addCooling(ct)
-    #id.addCooling(10.0)
-    #id.addCooling(100.0)
-    #id.addCooling(1000.0)
-    #id.addCooling(10000.0)
-    #id.addCooling(100000.0)
+        inp_data.addCooling(ct)
+    #inp_data.addCooling(10.0)
+    #inp_data.addCooling(100.0)
+    #inp_data.addCooling(1000.0)
+    #inp_data.addCooling(10000.0)
+    #inp_data.addCooling(100000.0)
     
     # validate data
-    id.validate()
+    inp_data.validate()
     
     #print(pp.to_string(id))
     
     # write to file
-    pp.to_file(id, '{}.i'.format(id.name))
+    pp.to_file(id, '{}.i'.format(inp_data.name))
+
 
 def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
                         decay_times=None):
