@@ -696,10 +696,24 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
                     # control the digits to avoid data entries too long
                     inp_data.addIsotope(name(nuc), float('{:6E}'.format(atom_dens[nuc]/mat.density*1e3)))
                 # irradiate and cooling times
-                inp_data.addIrradiation(1*365.25*86400, 4.4313e18*mesh.n_flux_total[:][idx]) # 1y 200MW
-                inp_data.addIrradiation(2*365.25*86400, 1.1078e19*mesh.n_flux_total[:][idx]) # 2y 500MW
-                inp_data.addIrradiation(5*365.25*86400, 2.2156e19*mesh.n_flux_total[:][idx]) # 5y 1000MW
-                inp_data.addIrradiation(2*365.25*86400, 3.3235e19*mesh.n_flux_total[:][idx]) # 2y 1500MW
+                # ----------------------- WCCB 1500MW --------------------------------------------------
+                #inp_data.addIrradiation(1*365.25*86400, 4.4313e18*mesh.n_flux_total[:][idx]) # 1y 200MW
+                #inp_data.addIrradiation(2*365.25*86400, 1.1078e19*mesh.n_flux_total[:][idx]) # 2y 500MW
+                #inp_data.addIrradiation(5*365.25*86400, 2.2156e19*mesh.n_flux_total[:][idx]) # 5y 1000MW
+                #inp_data.addIrradiation(2*365.25*86400, 3.3235e19*mesh.n_flux_total[:][idx]) # 2y 1500MW
+                # ----------------------- WCCB 1500MW --------------------------------------------------
+                # ----------------------- FNG-ITER------------------------------------------------------
+                inp_data.addIrradiation(17480, 3.038e10*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(7820, 4.284e10*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(54140, 0.0*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(22140, 4.291e10*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(900, 0.0*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(3820, 3.377e10*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(420, 0.0*mesh.n_flux_total[:][idx])
+                inp_data.addIrradiation(140, 2.857e10*mesh.n_flux_total[:][idx])
+                # ----------------------- FNG-ITER------------------------------------------------------
+
+                
                 cooling_times = calc_cooling_times(decay_times)
                 for i, ct in enumerate(cooling_times):
                     inp_data.addCooling(ct)
