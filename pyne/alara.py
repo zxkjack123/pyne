@@ -1120,7 +1120,7 @@ def _find_dt(idt, decay_times):
             if idt_s == dt_s:
                 # idt_s matches dt_s. return original string, dt.
                 return dt
-            elif dt_s != 0.0 and (abs(idt_s - dt_s)/dt_s) < 1e-6:
+            elif dt_s != 0.0 and (abs(idt_s - dt_s)/dt_s) < 1e-3:
                 return dt
         # if idt doesn't match any string in decay_times list, raise an error.
         raise ValueError(
