@@ -799,6 +799,8 @@ def fispact_photon_source_to_hdf5(mesh, fispact_files_dir='.', nucs='TOTAL',
     chunksize = chunkshape[0]
     rows = np.empty(chunksize, dtype=phtn_dtype)
     row_count = 0
+    isread_decay_times = False
+    decay_times = []
     for i, mat, ve in mesh:
         mats_map = {}
         for svid in range(len(mesh.cell_fracs[0])):
@@ -808,12 +810,20 @@ def fispact_photon_source_to_hdf5(mesh, fispact_files_dir='.', nucs='TOTAL',
         mat = mats.mix_by_volume()
         if mat.density > 0: # mat could be void, but fispact do not write void material
             filename = os.path.join(fispact_files_dir, ''.join(["ve", str(i), ".out"]))
+            if not isread_decay_times:
+                decay_times = read_decay_times(filename)
             with pp.Reader(filename) as output:
+                cumu_decay_time = 0.0
                 for t in output.inventory_data:
-                    if t.cooling_time > 0:
+                    cumu_decay_time += t.duration
+                    # SKIP irradiation phase
+                    if t.flux > 0.0:
+                        cumu_decay_time = 0
+                        continue
+                    if isin_decay_times(cumu_decay_time, decay_times) and (t.flux <= 0.0):
                         row_count += 1
                         j = (row_count-1) % chunksize
-                        rows[j] = (i, 'TOTAL', t.cooling_time,
+                        rows[j] = (i, 'TOTAL', cumu_decay_time,
                                    t.gamma_spectrum.volumetric_rates)
                     if (row_count > 0) and (row_count % chunksize == 0):
                        tab.append(rows)
@@ -862,3 +872,28 @@ def calc_cooling_times(decay_times):
         current_time += cooling_times[i]
     return cooling_times
 
+def read_decay_times(filename):
+    """
+    Read pure decay times from fispact output file.
+    """
+    decay_times = []
+    cumu_time = 0
+    with pp.Reader(filename) as output:
+        for t in output.inventory_data:
+            if (t.cooling_time > 0) and (t.flux <= 0.0):
+                cumu_time += t.duration
+                decay_times.append(cumu_time)
+            if t.flux > 0.0:
+                decay_times.clear()
+                cumu_time = 0
+    return decay_times
+ 
+
+def isin_decay_times(decay_time, decay_times):
+    """
+    Check a decay time (float) in list of float.
+    """
+    for dt in decay_times:
+        if dt != 0.0 and (abs(decay_time - dt)/dt) < 1e-3:
+            return True
+    return False
