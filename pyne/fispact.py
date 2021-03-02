@@ -648,7 +648,6 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
     if mesh.structured:
         cell_number = mesh.cell_number[:]
         cell_fracs = mesh.cell_fracs[:]
-        print("size of cell_mats", sys.getsizeof(cell_mats))
         for idx, mat, ve in mesh:
             if (idx > 0) and (idx % print_step == 0):
                 print("Dealing with volume element idx: {}".format(idx))
@@ -688,7 +687,8 @@ def write_fispact_input(mesh, cell_fracs, cell_mats, fispact_files_dir=".",
                 #inp_data.addElement('Ti', percentage=80.0)
                 #inp_data.addElement('Fe', percentage=14.8)
                 #inp_data.addElement('Cr', percentage=5.2)
-                inp_data.setDensity(mat.density)
+                #inp_data.setDensity(mat.density)
+                inp_data.setDensity(float('{:6E}'.format(mat.density)))
                 inp_data.setFuel()
                 atom_dens = mat.to_atom_dens()
                 for nuc, comp in mat.comp.items():
