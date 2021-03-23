@@ -28,8 +28,9 @@ one of the parser functions to consume the argument. Where appropriate,
 ensure that the argument is appended to the argument list that is returned by these
 functions.
 """
-from __future__ import print_function
 
+from __future__ import print_function
+import numpy as np
 import io
 import os
 import re
@@ -50,8 +51,6 @@ if sys.version_info[0] < 3:
 else:
     from urllib.request import urlopen
 
-import numpy as np
-
 
 # import src into pythonpath - needed to actually run decaygen/atomicgen
 if '.' not in sys.path:
@@ -61,7 +60,7 @@ if '.' not in sys.path:
 def absexpanduser(x): return os.path.abspath(os.path.expanduser(x))
 
 
-VERSION = '0.5.11'
+VERSION = '0.7.1'
 IS_NT = os.name == 'nt'
 LOCALDIR = absexpanduser('~/.local')
 CMAKE_BUILD_TYPES = {
@@ -73,6 +72,8 @@ CMAKE_BUILD_TYPES = {
 }
 ON_DARWIN = platform.system() == 'Darwin'
 LIBEXT = '.dylib' if ON_DARWIN else '.so'
+
+SKIP_OPTION = "SKIP"
 
 
 @contextmanager
@@ -100,19 +101,6 @@ def assert_np_version():
         raise ValueError(msg)
 
 
-def assert_ipython_version():
-    try:
-        import IPython
-    except ImportError:
-        return
-    low = (1, 2, 1)
-    v = IPython.__version__.split('-')[0]
-    cur = tuple(map(int, v.split('.')))
-    if cur < low:
-        msg = "ipython version is too low! {0} (have) < 2.0.0 (min)".format(v)
-        raise ValueError(msg)
-
-
 def assert_ubuntu_version():
     v = platform.uname()
     for itm in v:
@@ -125,7 +113,6 @@ def assert_ubuntu_version():
 def assert_dep_versions():
     assert_np_version()
     assert_ubuntu_version()
-    assert_ipython_version()
 
 
 def ssl_context():
@@ -269,13 +256,26 @@ def update_cmake_args(ns):
             '-DHDF5_LIBRARY_DIRS=' + h5root + '/lib',
             '-DHDF5_INCLUDE_DIRS=' + h5root + '/include',
         ]
-    if ns.moab is not None:
-        ns.cmake_args.append('-DMOAB_ROOT=' + absexpanduser(ns.moab))
+    if ns.moab is not SKIP_OPTION:
+        ns.cmake_args.append('-DWITH_MOAB=ON')
+        if ns.moab is not None:
+            ns.cmake_args.append('-DMOAB_ROOT=' + absexpanduser(ns.moab))
+
+    if ns.dagmc is not SKIP_OPTION:
+        assert ns.moab is not SKIP_OPTION, "If the --dagmc option is present," \
+                                           " --moab must be as well"
+        ns.cmake_args.append('-DWITH_DAGMC=ON')
+        if ns.dagmc is not None:
+            ns.cmake_args.append('-DDAGMC_ROOT=' + absexpanduser(ns.dagmc))
+
     if ns.deps_root:
         ns.cmake_args.append('-DDEPS_ROOT_DIR=' + absexpanduser(ns.deps_root))
     if ns.fast is not None:
         fast = 'TRUE' if ns.fast else 'FALSE'
         ns.cmake_args.append('-DPYNE_FAST_COMPILE=' + fast)
+    if ns.spatial_solvers is not None:
+        spatial_solvers = 'ON' if ns.spatial_solvers else 'OFF'
+        ns.cmake_args.append('-DENABLE_SPATIAL_SOLVERS=' + spatial_solvers)
 
 
 def update_make_args(ns):
@@ -289,6 +289,8 @@ def update_other_args(ns):
         os.environ['HDF5_ROOT'] = ns.hdf5
     if ns.moab is not None:
         os.environ['MOAB_ROOT'] = ns.moab
+    if ns.dagmc is not None:
+        os.environ['DAGMC_ROOT'] = ns.dagmc
 
 
 def parse_args():
@@ -328,7 +330,10 @@ def parse_args():
 
     other = parser.add_argument_group('other', 'Miscellaneous arguments.')
     other.add_argument('--hdf5', help='Path to HDF5 root directory.')
-    other.add_argument('--moab', help='Path to MOAB root directory.')
+    other.add_argument('--moab', help='Path to MOAB root directory.',
+                       nargs='?', default=SKIP_OPTION)
+    other.add_argument('--dagmc', help='Path to DAGMC root directory.',
+                       nargs='?', default=SKIP_OPTION)
     other.add_argument('--prefix', help='Prefix for install location.',
                        default=None)
     other.add_argument('--build-dir', default='build', dest="build_dir",
@@ -336,6 +341,12 @@ def parse_args():
     other.add_argument('--bootstrap', default=False, action='store_true',
                        help='Bootstraps the PyNE installation, including '
                             'nuc_data_make and possibly decaygen.')
+    other.add_argument('--spatial_solvers', default=True, 
+                       action='store_true',
+                       help='Build spatial solvers (Default)')
+    other.add_argument('--no_spatial_solvers', action='store_false', 
+                       dest='spatial_solvers',
+                       help='Do NOT build spatial solvers')
 
     ns = parser.parse_args(argv)
     update_setup_args(ns)

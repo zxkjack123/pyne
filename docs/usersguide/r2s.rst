@@ -76,7 +76,7 @@ file is alara_params.txt. This file will be appended to the ALARA geometry
 information automatically created by PyNE R2S to form a complete ALARA input
 file. The alara_params.txt file will need to be modified to specify the irradiation schedule,
 decay times of interest, and any other parameters. More information can be found in the
-`ALARA Users' Guide <http://alara.engr.wisc.edu/users.guide.html/>`_. Once both
+`ALARA Users' Guide <http://svalinn.github.io/ALARA/usersguide/index.html>`_. Once both
 of these files are filled out, run the command:
 
 .. code-block:: bash
@@ -105,9 +105,8 @@ decay time. These files will be named like:
 
 source_1.h5m, source_2.h5m ... source_N.h5m
 
-An "e_bounds" file containing the photon lower and upper energy bounds will also be generated. 
-These source files, combined with the "e_bounds" file can now be used as sources
-for photon transport within MCNP. Information on compiling/using a version of MCNP5
+These source files with tag named "e_bounds" can now be used as sources for
+photon transport within MCNP. Information on compiling/using a version of MCNP5
 that can utilize these mesh-based sources is found in the PyNE user's guide entry on 
 `mesh-based source sampling <http://pyne.io/usersguide/source_sampling.html#source-sampling-in-mcnp5>`_.
 Note that each of these source files must be renamed to "source.h5m" for this purpose.
@@ -118,12 +117,11 @@ PyNE R2S example
 ****************
 
 Using a simple geometry as a example, here is how we perform R2S calculation.
-The example geometry composed of four cubes of size 10x10x10 cm3. Cubes (in green) at bottom left and up right are water. Bottom right cube (in red) is made of steel, and up left cube (in white) is void.
-There is a isotropic single energy (14 MeV) neutron point source in the middle of the bottom right cube.
-The cubes are irradiated by the source with a single 3.5 day pulse, the neutron intensity is 1e10 n/s.
-The following content demonstrates the process of caculate the shutdown dose rate of these cubes at the time of 1 hour after shutdown.
-Example files could be found in 
-`r2s_example <https://github.com/pyne/data/blob/master/r2s_example.tar.gz>`_.
+The example geometry is composed of four cubes of size 10x10x10 cm\ :sup:`3`\ . It consists of two different materials, the water (in blue) and the steel (in red). The upper left cube (in white) is void.
+There is an isotropic monoenergetic (14 MeV) neutron point source in the center of the bottom right cube.
+The model is irradiated by a neutron source with intensitiy of 1e10 n/s for 3.5 days.
+The following content demonstrates the process of caculating the shutdown dose rate of this model at the time of 1 hour after shutdown.
+Example files can be found in `r2s_examples <https://github.com/pyne/data/blob/master/r2s_examples.tar.gz>`_.
 
 
 .. figure:: r2s_example_geometry.png
@@ -131,13 +129,7 @@ Example files could be found in
 
     **Figure 1:** *Geometry of R2S example (X-Y cross section).*
 
-Build the model using trelis as following figure. Set material group and export to `geom_without_material.h5m`.
-
-.. figure:: r2s_example_trelis_geometry.png
-    :align: center
-
-    **Figure 1:** *Trelis model for the example.*
-
+Build the model using Trelis (TM) and set material group and export to `geom_without_material.h5m`.
 
 Prepare material library, build material library. The material lib is then generated in file "example_material_lib.h5".
 
@@ -153,7 +145,7 @@ Combine the geometry file and the material library, using  the following command
 
    $ uwuw_preproc geom.h5m -v -l example_material_lib.h5
 
-Prepare input file, define source, tally and other data cards. Example input file could be seen in r2s_example/neutron_transport/input.
+Prepare input file, define source, tally and other data cards. Example input file can be seen in r2s_examples/neutron_transport/input.
 
 Neutron transport calculation. A meshtal will be generated in this step.
 
@@ -176,23 +168,26 @@ Perform R2S setup. The 'alara_params.txt' and 'config.ini' will be generated in 
    $ r2s.py setup
 
 Modify important parameters in the 'alara_params.txt' and 'config.ini' according to the problem.
-Examples could be seen 'alara_params_example.txt' and 'config_example.ini' in 'r2s_example/r2s_run'.
+Both are two modes of R2S: the voxel R2S and sub-voxel R2S.
+Examples input files can be seen in both 'r2s_examples/r2s_run' and 'subvoxel_r2s_run'.
+By setting the parameter 'sub_voxel' (in 'config.ini') to be 'False', the user can perform voxel R2S described in [4]_.
+By setting the parameter 'sub_voxel' to be 'True', the user can perform sub-voxel R2S without any other change.
 Prepare alara nuclide library, copy preinstalled data library from
-`ALARA/data <`r2s_example <https://github.com/svalinn/ALARA/tree/master/data.>`_.
-Example nuclide library could be seen in 'r2s_example/r2s_run/data'
+`ALARA/data <https://github.com/svalinn/ALARA/tree/master/data>`_.
+Example nuclide library can be seen in 'r2s_examples/data'
 Perform R2S step1. ALARA input file and neutron flux file will be generated in this step.
 
 .. code-block:: bash
 
    $ r2s.py step1
 
-Perform R2S step2. Several photon source file and a e_bounds file will be generated in this step.
+Perform R2S step2. Several photon source files will be generated in this step.
 
 .. code-block:: bash
 
    $ r2s.py step2
 
-Perform Photon transport calculation. Example input file could be seen in r2s_example/photon_transport/input.
+Perform Photon transport calculation. Example input file can be seen in r2s_examples/photon_transport/input.
 
 .. code-block:: bash
 
@@ -201,8 +196,6 @@ Perform Photon transport calculation. Example input file could be seen in r2s_ex
    $ ln -sf ../geom.h5m .
 
    $ ln -sf ../r2s_run/source_1.h5m source.h5m
-
-   $ ln -sf ../r2s_run/e_bounds .
 
    $ mcnp5.mpi i=input g=geom.h5m
 

@@ -120,6 +120,7 @@ def _names_dict():
     names_dict = {nucname.id(key): value for key, value in names.iteritems()}
     return names_dict
 
+
 def _cards(source):
     cards = {"block1": {"isn": 16,
                         "maxscm": '3E8',
@@ -268,6 +269,7 @@ def step1(cfg, cfg1):
         User input for step 1 from the config.yml file
     """
     # Get user-input from config file
+
     num_n_groups = cfg['n_groups']
     num_p_groups = cfg['p_groups']
     geom = cfg1['p_geom_file']
@@ -278,6 +280,7 @@ def step1(cfg, cfg1):
        origin_x, origin_y, origin_z = cfg1['origin'].split(' ') 
     except: 
        print("Too few entries in origin location")
+
 
     xmesh = cfg1['xmesh']
     xints = cfg1['xints']
@@ -291,7 +294,7 @@ def step1(cfg, cfg1):
           np.linspace(float(origin_y), float(ymesh), float(yints) + 1),
           np.linspace(float(origin_z), float(zmesh), float(zints) + 1)]
     m = Mesh(structured=True, structured_coords=sc)
-    m.mesh.save("blank_mesh.h5m")
+    m.write_hdf5("blank_mesh.h5m")
 
     # Get the photon energy bin structure [Mev] that matches the number of photon
     # energy groups in the problem
@@ -300,6 +303,7 @@ def step1(cfg, cfg1):
     #  Add an additional bin to the beginning of the array with value of 1 for log interpolation
     photon_bins = np.hstack([1.0E-6, photon_bins])
     # ICRP 74 flux-to-dose conversion factors in pico-Sv/s per photon flux
+
     de = np.array([0.01, 0.015, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.1,
                    0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 2, 4, 6, 8, 10])
     df = np.array([0.0485, 0.1254, 0.205, 0.2999, 0.3381, 0.3572, 0.378, 0.4066,
@@ -308,6 +312,7 @@ def step1(cfg, cfg1):
     # Convert to Sv/s per photon FLUX 
     convert_to_pico = 1.0e-12 
     df = df * convert_to_pico 
+
     # Convert pointwise data to group data for log interpolation
     photon_spectrum = pointwise_collapse(photon_bins, de, df, logx=True, logy=True)
     #  Anything below 0.01 MeV should be assigned the DF value of 0.01 MeV

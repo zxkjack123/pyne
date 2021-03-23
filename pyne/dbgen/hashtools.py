@@ -2,18 +2,17 @@
 Tools to generate, set and check the hashes of datasets in pyne.
 """
 import hashlib
-from warnings import warn
-from pyne.utils import QAWarning
+from pyne.utils import QA_warn
 
 import numpy
 import tables
 
 from .. import data
 
-warn(__name__ + " is not yet QA compliant.", QAWarning)
+QA_warn(__name__)
 
 # list of nodes from distinct data sets
-nodelist = ['/atomic_mass', '/material_library',
+nodelist = ['/atomic_mass', '/material_library/materials',
             '/neutron/eaf_xs', '/neutron/scattering_lengths',
             '/neutron/simple_xs', '/decay', '/dose_factors']
 

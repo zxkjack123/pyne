@@ -17,17 +17,19 @@ from __future__ import print_function, division, unicode_literals
 
 import re
 import sys
-from warnings import warn
-from collections import namedtuple, defaultdict
+try:
+    from collections.abc import namedtuple, defaultdict
+except ImportError:
+    from collections import namedtuple, defaultdict
 
 import numpy as np
 
-from pyne.utils import QAWarning
+from pyne.utils import QA_warn
 from pyne import rxdata
 import pyne.utils as utils
 from pyne import nucname
 
-warn(__name__ + ' is not yet QA compliant.', QAWarning)
+QA_warn(__name__)
 
 if sys.version_info[0] > 2:
     basestring = str
@@ -77,7 +79,7 @@ class Library(rxdata.RxLib):
         """Read all the table headers from an ENDL file."""
         opened_here = False
         if isinstance(self.fh, basestring):
-            fh = open(self.fh, 'rU')
+            fh = open(self.fh, 'r')
             opened_here = True
         else:
             fh = self.fh

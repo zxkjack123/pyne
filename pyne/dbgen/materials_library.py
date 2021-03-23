@@ -11,16 +11,16 @@ import os
 import csv
 import sys
 from itertools import takewhile, groupby
-from warnings import warn
-from pyne.utils import QAWarning
+from pyne.utils import QA_warn
 
 import tables as tb
 
 from pyne import nucname
 from pyne.data import natural_abund, natural_abund_map
-from pyne.material import Material, MaterialLibrary
+from pyne.material import Material
+from pyne.material_library import MaterialLibrary
 
-warn(__name__ + " is not yet QA compliant.", QAWarning)
+QA_warn(__name__)
 
 
 def make_elements():
@@ -128,8 +128,7 @@ def parse_materials(mats, lines):
 # Writes to file
 def make_materials_compendium(nuc_data, matslib):
     """Adds materials compendium to nuc_data.h5."""
-    matslib.write_hdf5(nuc_data, datapath="/material_library/materials",
-                       nucpath="/material_library/nucid")
+    matslib.write_hdf5(nuc_data)
 
 
 def make_matslib(fname):
